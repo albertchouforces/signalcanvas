@@ -156,6 +156,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
           backgroundDiv.style.left = '0';
           backgroundDiv.style.zIndex = '1';
         }
+        
+        // Find and remove the canvas control buttons from the clone
+        const buttonContainer = captureEl.querySelector('.canvas-control-buttons');
+        if (buttonContainer && buttonContainer instanceof HTMLElement) {
+          buttonContainer.style.display = 'none';
+        }
       }
       
       // Temporarily add to document for capture
@@ -178,6 +184,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
               bgDiv.style.display = 'block';
               bgDiv.style.opacity = '1';
               bgDiv.style.visibility = 'visible';
+            }
+            
+            // Hide canvas control buttons in the cloned document
+            const buttons = clonedEl.querySelector('.canvas-control-buttons');
+            if (buttons instanceof HTMLElement) {
+              buttons.style.display = 'none';
             }
           }
         }
