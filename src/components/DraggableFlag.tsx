@@ -60,6 +60,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     removeFlag(flag.id);
   };
 
+  // Prevent default touch behavior to avoid image selection dialog
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+  }; 
+
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
@@ -72,7 +77,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   return (
     <div
       ref={flagRefCallback}
-      className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
+      className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'} no-select`}
       style={{
         left: `${flag.left}px`,
         top: `${flag.top}px`,
@@ -80,12 +85,13 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
         transform: 'translate(-50%, -50%)', // Center the flag at the position
         pointerEvents: isDragging ? 'none' : 'auto',
       }}
+      onTouchStart={handleTouchStart}
     >
       <div className="relative group">
         <img
           src={flag.image}
           alt={flag.name}
-          className="h-16 w-auto object-contain"
+          className="h-16 w-auto object-contain no-select no-touch-action no-drag-image"
           style={{
             ...(isTackline ? {
               maxWidth: '64px',  // Match width of other flags
@@ -100,6 +106,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
             minHeight: isTackline ? '48px' : '64px', // Ensure minimum height
           }}
           draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
         />
         <button
           onClick={handleRemove}

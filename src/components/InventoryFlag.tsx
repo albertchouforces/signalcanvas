@@ -37,6 +37,11 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
     }),
   }), [flag.type, flag.id]);
 
+  // Prevent default touch behavior to avoid image selection dialog
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+  };
+
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
@@ -56,17 +61,18 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
       ref={flagRefCallback}
       className={`flex flex-col items-center p-2 border rounded cursor-grab transition-all duration-200 ${
         isDragging ? 'opacity-50' : 'opacity-100'
-      } hover:shadow-md hover:border-gray-300 hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98]`}
+      } hover:shadow-md hover:border-gray-300 hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] no-select`}
       style={{ 
         zIndex: isDragging ? 100 : 10,
         pointerEvents: isDragging ? 'none' : 'auto',
       }}
+      onTouchStart={handleTouchStart}
     >
       <img
         ref={imageRefCallback}
         src={flag.image}
         alt={flag.name}
-        className="h-16 w-auto object-contain mb-2"
+        className="h-16 w-auto object-contain mb-2 no-select no-touch-action no-drag-image"
         style={isTackline ? {
           maxWidth: '64px',  // Match width in inventory
           height: '48px',    // Slightly smaller height
@@ -74,6 +80,7 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
           objectPosition: 'center'
         } : undefined}
         draggable={false}
+        onContextMenu={(e) => e.preventDefault()}
       />
       <span className="text-sm text-center">{flag.name}</span>
     </div>

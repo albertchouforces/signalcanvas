@@ -421,7 +421,9 @@ const Practice = () => {
                                     <img
                                       src={flag.image}
                                       alt={flag.name}
-                                      className="h-12 w-auto object-contain"
+                                      className="h-12 w-auto object-contain no-select no-touch-action no-drag-image"
+                                      draggable={false}
+                                      onContextMenu={(e) => e.preventDefault()}
                                     />
                                     <span className="text-xs text-gray-600 mt-1">{flag.name}</span>
                                   </div>

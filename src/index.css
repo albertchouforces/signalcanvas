@@ -33,3 +33,24 @@ html, body {
   animation-timing-function: ease-out;
   animation-fill-mode: forwards;
 }
+
+/* Prevent image selection and touch callout on mobile */
+.no-select {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.no-touch-action {
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+
+.no-drag-image {
+  -webkit-user-drag: none;
+  -khtml-user-drag: none;
+  -moz-user-drag: none;
+  -o-user-drag: none;
+  user-drag: none;
+}
