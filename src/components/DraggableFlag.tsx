@@ -1,114 +1,234 @@
-import { useDrag } from 'react-dnd';
-import { PlacedFlag, useSignal } from '../context/SignalContext';
-import { X } from 'lucide-react';
-import { useRef, useEffect, useState } from 'react';
+import { useDrop } from 'react-dnd';
+import { useSignal } from '../context/SignalContext';
+import DraggableFlag from './DraggableFlag';
+import { useEffect, useRef, useState } from 'react';
 
-interface DraggableFlagProps {
-  flag: PlacedFlag;
-  isDraggingOnBoard: boolean;
-}
-
-const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
-  const { removeFlag, playAreaRef } = useSignal();
-  const flagRef = useRef<HTMLDivElement>(null);
-  const [shouldFlip, setShouldFlip] = useState(false);
+const PlayArea = () => {
+  const { placedFlags, addFlag, moveFlag, playAreaRef } = useSignal();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+  const [containerHeight, setContainerHeight] = useState<number>(0);
+  const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
+  const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
   
-  // Check if the flag should be flipped based on its position
+  // Load and measure the background image to set proper dimensions
   useEffect(() => {
-    if (!playAreaRef.current) return;
+    const img = new Image();
+    img.onload = () => {
+      setBackgroundImageLoaded(true);
+      
+      // Calculate and store the natural aspect ratio of the image
+      const imgAspectRatio = img.height / img.width;
+      setNaturalAspectRatio(imgAspectRatio);
+      
+      // If container is available, set initial dimensions
+      if (containerRef.current) {
+        // Get available width (constrained by parent container)
+        const availableWidth = containerRef.current.parentElement?.clientWidth || containerRef.current.clientWidth;
+        setContainerWidth(availableWidth);
+        
+        // Set height based on exact aspect ratio - this will match the image height exactly
+        setContainerHeight(availableWidth * imgAspectRatio);
+      }
+    };
     
-    // Get the canvas width to determine the midpoint
-    const canvasWidth = playAreaRef.current.clientWidth;
-    const midpoint = canvasWidth / 2;
+    // Set the image source
+    img.src = 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png';
     
-    // Determine if the flag is past the midpoint
-    // Don't flip the flag if it's a tackline
-    const shouldFlipFlag = flag.type !== 'tackline' && flag.left > midpoint;
-    setShouldFlip(shouldFlipFlag);
-  }, [flag.left, flag.type, playAreaRef]);
+    // Clean up
+    return () => {
+      img.onload = null;
+    };
+  }, []);
+  
+  // Set up resize observer to handle window/container size changes
+  useEffect(() => {
+    if (!containerRef.current || !backgroundImageLoaded || naturalAspectRatio === 0) return;
+    
+    // Function to calculate dimensions based on exact image aspect ratio
+    const updateContainerDimensions = () => {
+      if (!containerRef.current) return;
+      
+      // Get the parent container width
+      const parentWidth = containerRef.current.parentElement?.clientWidth || window.innerWidth;
+      
+      // Use the width of parent container (or a reasonable default if none)
+      const availableWidth = Math.min(parentWidth, 800); // Limit max width to 800px
+      
+      // Set container width
+      setContainerWidth(availableWidth);
+      
+      // Calculate height based on the measured natural aspect ratio
+      setContainerHeight(availableWidth * naturalAspectRatio);
+      
+      // Update the play area dimensions to match exactly
+      if (playAreaRef.current) {
+        playAreaRef.current.style.width = `${availableWidth}px`;
+        playAreaRef.current.style.height = `${availableWidth * naturalAspectRatio}px`;
+      }
+    };
+    
+    // Calculate initial dimensions
+    updateContainerDimensions();
+    
+    // Create resize observer
+    const resizeObserver = new ResizeObserver(() => {
+      updateContainerDimensions();
+    });
+    
+    // Observe the container and parent
+    resizeObserver.observe(containerRef.current);
+    if (containerRef.current.parentElement) {
+      resizeObserver.observe(containerRef.current.parentElement);
+    }
+    
+    // Also listen for window resize events
+    window.addEventListener('resize', updateContainerDimensions);
+    
+    // Clean up
+    return () => {
+      if (containerRef.current) {
+        resizeObserver.unobserve(containerRef.current);
+        if (containerRef.current.parentElement) {
+          resizeObserver.unobserve(containerRef.current.parentElement);
+        }
+      }
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateContainerDimensions);
+    };
+  }, [backgroundImageLoaded, naturalAspectRatio]);
 
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'FLAG',
-    item: (monitor) => {
-      // Get the flag element's bounding rectangle
-      const flagRect = flagRef.current?.getBoundingClientRect();
+  // Update content area if flags exceed canvas bounds
+  useEffect(() => {
+    if (!playAreaRef.current || naturalAspectRatio === 0) return;
+    
+    // Calculate furthest positions of placed flags
+    const furthestPosition = placedFlags.reduce((max, flag) => {
+      const rightEdge = flag.left + 64; 
+      const bottomEdge = flag.top + 64;
       
-      // Get cursor position at the start of drag
-      const initialClientOffset = monitor.getClientOffset();
-      
-      return { 
-        type: flag.type, 
-        id: flag.id, 
-        isDragging: isDraggingOnBoard,
-        // Store the flag dimensions and position info
-        flagRect: flagRect,
-        // Store the initial mouse position relative to the flag center
-        mouseOffset: flagRect && initialClientOffset ? {
-          x: initialClientOffset.x - (flagRect.left + flagRect.width / 2),
-          y: initialClientOffset.y - (flagRect.top + flagRect.height / 2),
-        } : null,
+      return {
+        right: Math.max(max.right, rightEdge),
+        bottom: Math.max(max.bottom, bottomEdge)
       };
-    },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
-  }), [flag.id, flag.type, isDraggingOnBoard]);
+    }, { right: 0, bottom: 0 });
+    
+    // Ensure the content area can accommodate all flags
+    const minContentWidth = Math.max(containerWidth, furthestPosition.right + 50);
+    
+    // Only expand width if needed for flags, maintain exact height based on image
+    const minContentHeight = Math.max(containerHeight, furthestPosition.bottom + 50);
+    
+    // Only update if flags extend beyond the container
+    if (minContentWidth > containerWidth) {
+      playAreaRef.current.style.minWidth = `${minContentWidth}px`;
+    } else {
+      playAreaRef.current.style.minWidth = `${containerWidth}px`;
+    }
+    
+    if (minContentHeight > containerHeight) {
+      playAreaRef.current.style.minHeight = `${minContentHeight}px`;
+    } else {
+      // This is the key fix - match exactly to the container height which is based on image dimensions
+      playAreaRef.current.style.minHeight = `${containerHeight}px`;
+      playAreaRef.current.style.height = `${containerHeight}px`;
+    }
+  }, [placedFlags, containerWidth, containerHeight, naturalAspectRatio]);
 
-  const handleRemove = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    removeFlag(flag.id);
-  };
-
-  // Determine if this is a tackline flag
-  const isTackline = flag.type === 'tackline';
+  const [, drop] = useDrop(() => ({
+    accept: 'FLAG',
+    drop: (item: { 
+      type: string; 
+      id?: string; 
+      isDragging?: boolean;
+      flagRect?: DOMRect;
+      mouseOffset?: { x: number; y: number } | null;
+    }, monitor) => {
+      if (!playAreaRef.current) return;
+      
+      // Get the current cursor position
+      const dropClientOffset = monitor.getClientOffset();
+      if (!dropClientOffset) return;
+      
+      // Get the play area's position and scroll
+      const playAreaRect = playAreaRef.current.getBoundingClientRect();
+      const scrollLeft = playAreaRef.current.scrollLeft;
+      const scrollTop = playAreaRef.current.scrollTop;
+      
+      // Calculate drop position
+      let left = dropClientOffset.x - playAreaRect.left + scrollLeft;
+      let top = dropClientOffset.y - playAreaRect.top + scrollTop;
+      
+      // If we have mouse offset data, adjust the position
+      if (item.mouseOffset) {
+        left -= item.mouseOffset.x;
+        top -= item.mouseOffset.y;
+      }
+      
+      if (item.id && item.isDragging) {
+        // Moving an existing flag
+        moveFlag(item.id, left, top);
+      } else {
+        // Adding a new flag from inventory
+        addFlag(item.type, left, top);
+      }
+    }
+  }), [addFlag, moveFlag]);
 
   return (
-    <div
-      ref={(node) => {
-        // This pattern ensures we maintain both the ref for measuring and the DnD functionality
-        drag(node);
-        // Manually update the ref without directly assigning to .current
-        flagRef.current = node;
-      }}
-      className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
-      style={{
-        left: `${flag.left}px`,
-        top: `${flag.top}px`,
-        zIndex: isDragging ? 100 : 10,
-        transform: 'translate(-50%, -50%)', // Center the flag at the position
-        pointerEvents: isDragging ? 'none' : 'auto',
-      }}
+    <div 
+      className="bg-white rounded-lg shadow-md overflow-hidden"
+      ref={containerRef}
     >
-      <div className="relative group">
-        <img
-          src={flag.image}
-          alt={flag.name}
-          className="h-16 w-auto object-contain"
+      {/* Canvas container with height exactly matching the background image */}
+      <div 
+        className="relative" 
+        style={{ 
+          width: `${containerWidth}px`,
+          height: `${containerHeight}px`,
+          overflow: 'hidden',
+        }}
+      >
+        {/* Background image that fills the container exactly */}
+        <div 
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            ...(isTackline ? {
-              maxWidth: '64px',  // Match width of other flags
-              height: '48px',    // Slightly smaller height
-              objectFit: 'contain',
-              objectPosition: 'center'
-            } : {}),
-            // Apply horizontal flip transform when the flag should be flipped
-            transform: shouldFlip ? 'scaleX(-1)' : 'none',
-            transition: 'transform 0.2s ease', // Smooth transition when flipping
-            minWidth: isTackline ? '64px' : '48px', // Ensure minimum width
-            minHeight: isTackline ? '48px' : '64px', // Ensure minimum height
+            backgroundImage: 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)',
+            backgroundSize: 'contain',
+            backgroundPosition: 'top center',
+            backgroundRepeat: 'no-repeat',
+            zIndex: 1,
           }}
-          draggable={false}
         />
-        <button
-          onClick={handleRemove}
-          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 
-                    opacity-0 group-hover:opacity-100 transition-opacity"
+        
+        {/* Scrollable content area */}
+        <div
+          ref={(node) => {
+            // This ensures both the drop functionality and our ref for dimensions work together
+            drop(node);
+            // Update the context ref without directly modifying .current
+            if (playAreaRef) {
+              playAreaRef.current = node;
+            }
+          }}
+          className="absolute top-0 left-0 w-full h-full bg-transparent"
+          style={{
+            overflowX: 'auto',
+            overflowY: 'auto',
+            zIndex: 2,
+          }}
         >
-          <X className="h-3 w-3" />
-        </button>
+          {placedFlags.map((flag) => (
+            <DraggableFlag
+              key={flag.id}
+              flag={flag}
+              isDraggingOnBoard={true}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
 };
 
-export default DraggableFlag;
+export default PlayArea;
