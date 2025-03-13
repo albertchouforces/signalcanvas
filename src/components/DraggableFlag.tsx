@@ -67,6 +67,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
       ref={(node) => {
         // This pattern ensures we maintain both the ref for measuring and the DnD functionality
         drag(node);
+        // Manually update the ref without directly assigning to .current
         flagRef.current = node;
       }}
       className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}

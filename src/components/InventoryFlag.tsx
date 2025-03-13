@@ -45,6 +45,7 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
       ref={(node) => {
         // This pattern ensures we maintain both the ref for sizing and the DnD functionality
         drag(node);
+        // Manually update the ref without directly assigning to .current
         flagRef.current = node;
       }}
       className={`flex flex-col items-center p-2 border rounded cursor-grab transition-all duration-200 ${

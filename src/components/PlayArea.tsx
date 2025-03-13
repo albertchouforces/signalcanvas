@@ -193,7 +193,7 @@ const PlayArea = () => {
         <div 
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            backgroundImage: 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)',
+            backgroundImage: 'url(images/navcommmast.png)',
             backgroundSize: 'contain',
             backgroundPosition: 'top center',
             backgroundRepeat: 'no-repeat',
@@ -206,7 +206,7 @@ const PlayArea = () => {
           ref={(node) => {
             // This ensures both the drop functionality and our ref for dimensions work together
             drop(node);
-            // Update the context ref
+            // Update the context ref without directly modifying .current
             if (playAreaRef) {
               playAreaRef.current = node;
             }
