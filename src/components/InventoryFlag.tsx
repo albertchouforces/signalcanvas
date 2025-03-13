@@ -7,7 +7,6 @@ interface InventoryFlagProps {
 }
 
 const InventoryFlag = ({ flag }: InventoryFlagProps) => {
-  const flagRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({

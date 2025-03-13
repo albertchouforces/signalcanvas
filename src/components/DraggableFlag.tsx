@@ -67,13 +67,8 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
       ref={(node) => {
         // This ensures we get both the drag behavior and keep our measurement ref
         drag(node);
-        // We don't manually assign flagRef.current as that's read-only
-        // Instead we use the ref callback pattern properly
-        if (node) {
-          // The ref callback gives us the node directly
-          // We don't need to assign to .current
-          flagRef.current = node;
-        }
+        // Use the ref callback pattern to update the ref value
+        flagRef.current = node;
       }}
       className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       style={{

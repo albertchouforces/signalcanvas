@@ -203,20 +203,18 @@ const PlayArea = () => {
         
         {/* Scrollable content area */}
         <div
-          ref={drop}
+          ref={(node) => {
+            drop(node);
+            // Set playAreaRef using callback pattern
+            if (node && playAreaRef) {
+              playAreaRef.current = node;
+            }
+          }}
           className="absolute top-0 left-0 w-full h-full bg-transparent"
           style={{
             overflowX: 'auto',
             overflowY: 'auto',
             zIndex: 2,
-          }}
-          onClick={(e) => {
-            // This ensures the playAreaRef is set correctly but without direct assignment
-            if (playAreaRef && playAreaRef.current !== e.currentTarget) {
-              // We're using the ref callback system indirectly via the onClick
-              // This provides a hook to set the ref only when this element actually exists
-              playAreaRef.current = e.currentTarget as HTMLDivElement;
-            }
           }}
         >
           {placedFlags.map((flag) => (
