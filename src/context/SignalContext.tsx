@@ -109,6 +109,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
 
   const clearBoard = useCallback(() => {
     setPlacedFlags([]);
+    setNotification({ message: 'Board cleared', type: 'success' });
   }, []);
 
   // Safe way to update the play area ref without direct .current assignment
