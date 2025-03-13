@@ -2,14 +2,16 @@ import { useDrop } from 'react-dnd';
 import { useSignal } from '../context/SignalContext';
 import DraggableFlag from './DraggableFlag';
 import { useEffect, useRef, useState } from 'react';
+import { Camera, Trash2 } from 'lucide-react';
 
 const PlayArea = () => {
-  const { placedFlags, addFlag, moveFlag, updatePlayAreaRef } = useSignal();
+  const { placedFlags, addFlag, moveFlag, updatePlayAreaRef, clearBoard, copyBoardToClipboard } = useSignal();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
+  const [isHovering, setIsHovering] = useState(false);
   
   // Load and measure the background image to set proper dimensions
   useEffect(() => {
@@ -189,6 +191,8 @@ const PlayArea = () => {
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden"
       ref={containerRef}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {/* Canvas container with height exactly matching the background image */}
       <div 
@@ -228,6 +232,36 @@ const PlayArea = () => {
               isDraggingOnBoard={true}
             />
           ))}
+        </div>
+
+        {/* Canvas control buttons - only visible on hover */}
+        <div 
+          className={`absolute bottom-4 right-4 flex space-x-2 transition-opacity duration-300 z-10 ${
+            isHovering ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          <button
+            onClick={copyBoardToClipboard}
+            className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 
+                    active:bg-blue-800 transition-all duration-200 shadow-sm hover:shadow
+                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
+                    hover:scale-[1.02] active:scale-[0.98]"
+            aria-label="Copy board to clipboard"
+          >
+            <Camera className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
+            <span className="text-sm font-medium">Copy</span>
+          </button>
+          <button
+            onClick={clearBoard}
+            className="flex items-center px-3 py-2 bg-white text-red-600 border border-red-200 rounded-md 
+                    hover:bg-red-50 active:bg-red-100 transition-all duration-200 shadow-sm hover:shadow
+                    focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
+                    hover:scale-[1.02] active:scale-[0.98]"
+            aria-label="Clear all flags from board"
+          >
+            <Trash2 className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
+            <span className="text-sm font-medium">Clear</span>
+          </button>
         </div>
       </div>
     </div>
