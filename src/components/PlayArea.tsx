@@ -4,7 +4,7 @@ import DraggableFlag from './DraggableFlag';
 import { useEffect, useRef, useState } from 'react';
 
 const PlayArea = () => {
-  const { placedFlags, addFlag, moveFlag, playAreaRef } = useSignal();
+  const { placedFlags, addFlag, moveFlag, updatePlayAreaRef } = useSignal();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -60,12 +60,6 @@ const PlayArea = () => {
       
       // Calculate height based on the measured natural aspect ratio
       setContainerHeight(availableWidth * naturalAspectRatio);
-      
-      // Update the play area dimensions to match exactly
-      if (playAreaRef.current) {
-        playAreaRef.current.style.width = `${availableWidth}px`;
-        playAreaRef.current.style.height = `${availableWidth * naturalAspectRatio}px`;
-      }
     };
     
     // Calculate initial dimensions
@@ -98,42 +92,47 @@ const PlayArea = () => {
     };
   }, [backgroundImageLoaded, naturalAspectRatio]);
 
-  // Update content area if flags exceed canvas bounds
+  // Update the play area dimensions on changes
   useEffect(() => {
-    if (!playAreaRef.current || naturalAspectRatio === 0) return;
+    if (!backgroundImageLoaded || naturalAspectRatio === 0) return;
     
-    // Calculate furthest positions of placed flags
-    const furthestPosition = placedFlags.reduce((max, flag) => {
-      const rightEdge = flag.left + 64; 
-      const bottomEdge = flag.top + 64;
+    // Update play area dimensions when containerWidth or containerHeight changes
+    // This ensures the drop area dimensions match the visual container exactly
+    const playAreaNode = document.querySelector('.play-area-content');
+    if (playAreaNode && playAreaNode instanceof HTMLElement) {
+      // Set exact dimensions based on container
+      playAreaNode.style.width = `${containerWidth}px`;
+      playAreaNode.style.height = `${containerHeight}px`;
       
-      return {
-        right: Math.max(max.right, rightEdge),
-        bottom: Math.max(max.bottom, bottomEdge)
-      };
-    }, { right: 0, bottom: 0 });
-    
-    // Ensure the content area can accommodate all flags
-    const minContentWidth = Math.max(containerWidth, furthestPosition.right + 50);
-    
-    // Only expand width if needed for flags, maintain exact height based on image
-    const minContentHeight = Math.max(containerHeight, furthestPosition.bottom + 50);
-    
-    // Only update if flags extend beyond the container
-    if (minContentWidth > containerWidth) {
-      playAreaRef.current.style.minWidth = `${minContentWidth}px`;
-    } else {
-      playAreaRef.current.style.minWidth = `${containerWidth}px`;
+      // Calculate furthest positions of placed flags to ensure content area fits all flags
+      const furthestPosition = placedFlags.reduce((max, flag) => {
+        const rightEdge = flag.left + 64; 
+        const bottomEdge = flag.top + 64;
+        
+        return {
+          right: Math.max(max.right, rightEdge),
+          bottom: Math.max(max.bottom, bottomEdge)
+        };
+      }, { right: 0, bottom: 0 });
+      
+      // Expand content area if needed for flags, while maintaining aspect ratio
+      const minContentWidth = Math.max(containerWidth, furthestPosition.right + 50);
+      const minContentHeight = Math.max(containerHeight, furthestPosition.bottom + 50);
+      
+      if (minContentWidth > containerWidth) {
+        playAreaNode.style.minWidth = `${minContentWidth}px`;
+      } else {
+        playAreaNode.style.minWidth = `${containerWidth}px`;
+      }
+      
+      if (minContentHeight > containerHeight) {
+        playAreaNode.style.minHeight = `${minContentHeight}px`;
+      } else {
+        playAreaNode.style.minHeight = `${containerHeight}px`;
+        playAreaNode.style.height = `${containerHeight}px`;
+      }
     }
-    
-    if (minContentHeight > containerHeight) {
-      playAreaRef.current.style.minHeight = `${minContentHeight}px`;
-    } else {
-      // This is the key fix - match exactly to the container height which is based on image dimensions
-      playAreaRef.current.style.minHeight = `${containerHeight}px`;
-      playAreaRef.current.style.height = `${containerHeight}px`;
-    }
-  }, [placedFlags, containerWidth, containerHeight, naturalAspectRatio]);
+  }, [containerWidth, containerHeight, placedFlags, backgroundImageLoaded, naturalAspectRatio]);
 
   const [, drop] = useDrop(() => ({
     accept: 'FLAG',
@@ -144,18 +143,20 @@ const PlayArea = () => {
       flagRect?: DOMRect;
       mouseOffset?: { x: number; y: number } | null;
     }, monitor) => {
-      if (!playAreaRef.current) return;
+      // Get the drop target node
+      const dropTargetNode = document.querySelector('.play-area-content');
+      if (!dropTargetNode) return;
       
       // Get the current cursor position
       const dropClientOffset = monitor.getClientOffset();
       if (!dropClientOffset) return;
       
       // Get the play area's position and scroll
-      const playAreaRect = playAreaRef.current.getBoundingClientRect();
-      const scrollLeft = playAreaRef.current.scrollLeft;
-      const scrollTop = playAreaRef.current.scrollTop;
+      const playAreaRect = dropTargetNode.getBoundingClientRect();
+      const scrollLeft = dropTargetNode instanceof HTMLElement ? dropTargetNode.scrollLeft : 0;
+      const scrollTop = dropTargetNode instanceof HTMLElement ? dropTargetNode.scrollTop : 0;
       
-      // Calculate drop position
+      // Calculate drop position with proper scroll offsets
       let left = dropClientOffset.x - playAreaRect.left + scrollLeft;
       let top = dropClientOffset.y - playAreaRect.top + scrollTop;
       
@@ -174,6 +175,15 @@ const PlayArea = () => {
       }
     }
   }), [addFlag, moveFlag]);
+
+  // Use this callback to update the context without direct .current assignments
+  const playAreaRefCallback = (node: HTMLDivElement | null) => {
+    if (node) {
+      drop(node);
+      updatePlayAreaRef(node);
+      node.classList.add('play-area-content');
+    }
+  };
 
   return (
     <div 
@@ -203,13 +213,7 @@ const PlayArea = () => {
         
         {/* Scrollable content area */}
         <div
-          ref={(node) => {
-            drop(node);
-            // Set playAreaRef using callback pattern
-            if (node && playAreaRef) {
-              playAreaRef.current = node;
-            }
-          }}
+          ref={playAreaRefCallback}
           className="absolute top-0 left-0 w-full h-full bg-transparent"
           style={{
             overflowX: 'auto',

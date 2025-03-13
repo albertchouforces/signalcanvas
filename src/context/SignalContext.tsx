@@ -26,7 +26,8 @@ interface SignalContextType {
   clearBoard: () => void;
   copyBoardToClipboard: () => Promise<void>;
   notification: { message: string, type: 'success' | 'error' | '' } | null;
-  playAreaRef: React.RefObject<HTMLDivElement>;
+  getPlayAreaNode: () => HTMLElement | null;
+  updatePlayAreaRef: (node: HTMLElement | null) => void;
 }
 
 const SignalContext = createContext<SignalContextType | undefined>(undefined);
@@ -47,7 +48,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const [inventory, setInventory] = useState<Flag[]>([]);
   const [placedFlags, setPlacedFlags] = useState<PlacedFlag[]>([]);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | '' } | null>(null);
-  const playAreaRef = useRef<HTMLDivElement>(null);
+  const playAreaRef = useRef<HTMLElement | null>(null);
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
@@ -110,15 +111,26 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     setPlacedFlags([]);
   }, []);
 
+  // Safe way to update the play area ref without direct .current assignment
+  const updatePlayAreaRef = useCallback((node: HTMLElement | null) => {
+    playAreaRef.current = node;
+  }, []);
+
+  // Safe way to get the play area node
+  const getPlayAreaNode = useCallback(() => {
+    return playAreaRef.current;
+  }, []);
+
   const copyBoardToClipboard = useCallback(async () => {
-    if (!playAreaRef.current) {
+    const playAreaNode = playAreaRef.current;
+    if (!playAreaNode) {
       setNotification({ message: 'Could not find play area to copy', type: 'error' });
       return;
     }
 
     try {
       // Find the parent container that contains both the background and the flags
-      const playAreaContainer = playAreaRef.current.parentElement;
+      const playAreaContainer = playAreaNode.parentElement;
       if (!playAreaContainer) {
         throw new Error("Could not find play area container");
       }
@@ -203,7 +215,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       console.error('Error capturing board:', error);
       setNotification({ message: 'Failed to capture board', type: 'error' });
     }
-  }, [placedFlags]);
+  }, []);
 
   const value = {
     inventory,
@@ -214,7 +226,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     clearBoard,
     copyBoardToClipboard,
     notification,
-    playAreaRef,
+    getPlayAreaNode,
+    updatePlayAreaRef,
   };
 
   return <SignalContext.Provider value={value}>{children}</SignalContext.Provider>;

@@ -7,7 +7,8 @@ interface InventoryFlagProps {
 }
 
 const InventoryFlag = ({ flag }: InventoryFlagProps) => {
-  const imageRef = useRef<HTMLImageElement>(null);
+  const flagRef = useRef<HTMLDivElement | null>(null);
+  const imageRef = useRef<HTMLImageElement | null>(null);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'FLAG',
@@ -39,9 +40,20 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
+  // Use ref callback pattern to avoid direct .current assignment
+  const flagRefCallback = (node: HTMLDivElement | null) => {
+    flagRef.current = node;
+    drag(node);
+  };
+
+  // Image ref callback to avoid direct .current assignment
+  const imageRefCallback = (node: HTMLImageElement | null) => {
+    imageRef.current = node;
+  };
+
   return (
     <div
-      ref={drag}
+      ref={flagRefCallback}
       className={`flex flex-col items-center p-2 border rounded cursor-grab transition-all duration-200 ${
         isDragging ? 'opacity-50' : 'opacity-100'
       } hover:shadow-md hover:border-gray-300 hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98]`}
@@ -51,7 +63,7 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
       }}
     >
       <img
-        ref={imageRef}
+        ref={imageRefCallback}
         src={flag.image}
         alt={flag.name}
         className="h-16 w-auto object-contain mb-2"

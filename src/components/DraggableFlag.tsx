@@ -9,23 +9,24 @@ interface DraggableFlagProps {
 }
 
 const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
-  const { removeFlag, playAreaRef } = useSignal();
-  const flagRef = useRef<HTMLDivElement>(null);
+  const { removeFlag, getPlayAreaNode } = useSignal();
+  const flagRef = useRef<HTMLDivElement | null>(null);
   const [shouldFlip, setShouldFlip] = useState(false);
   
   // Check if the flag should be flipped based on its position
   useEffect(() => {
-    if (!playAreaRef.current) return;
+    const playAreaNode = getPlayAreaNode();
+    if (!playAreaNode) return;
     
     // Get the canvas width to determine the midpoint
-    const canvasWidth = playAreaRef.current.clientWidth;
+    const canvasWidth = playAreaNode.clientWidth;
     const midpoint = canvasWidth / 2;
     
     // Determine if the flag is past the midpoint
     // Don't flip the flag if it's a tackline
     const shouldFlipFlag = flag.type !== 'tackline' && flag.left > midpoint;
     setShouldFlip(shouldFlipFlag);
-  }, [flag.left, flag.type, playAreaRef]);
+  }, [flag.left, flag.type, getPlayAreaNode]);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'FLAG',
@@ -62,21 +63,15 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
-  // Create a ref callback that combines the drag ref and the measurement ref
-  const setRefs = (node: HTMLDivElement | null) => {
-    // Apply the drag behavior to the node
+  // Use ref callback pattern to avoid direct .current assignment
+  const flagRefCallback = (node: HTMLDivElement | null) => {
+    flagRef.current = node;
     drag(node);
-    
-    // Update our measurement ref without directly setting current
-    // React will handle updating the ref.current for us behind the scenes
-    if (node !== null) {
-      flagRef.current = node;
-    }
   };
 
   return (
     <div
-      ref={setRefs}
+      ref={flagRefCallback}
       className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       style={{
         left: `${flag.left}px`,
