@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import InventoryFlag from './InventoryFlag';
 import { useSignal } from '../context/SignalContext';
 import Tabs from './Tabs';
@@ -9,6 +9,10 @@ const Inventory = () => {
   const [activeTab, setActiveTab] = useState<'flags' | 'pennants'>('flags');
   const [searchTerm, setSearchTerm] = useState('');
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchStartTimestampRef = useRef<number | null>(null);
+  const inventoryRef = useRef<HTMLDivElement | null>(null);
 
   // Check if we're on mobile when component mounts and set initial collapsed state
   useEffect(() => {
@@ -37,9 +41,12 @@ const Inventory = () => {
     setActiveTab(tabId as 'flags' | 'pennants');
   };
 
-  // Toggle collapsed state
+  // Toggle collapsed state - only triggered by explicit button press
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    // Only toggle if user is not actively scrolling
+    if (!isUserScrolling) {
+      setIsCollapsed(!isCollapsed);
+    }
   };
 
   // Filter inventory based on active tab and search term
@@ -57,8 +64,48 @@ const Inventory = () => {
     return matchesCategory && matchesSearch;
   });
 
+  // Handle scroll start
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Store initial touch position and timestamp
+    if (e.touches.length === 1) {
+      touchStartYRef.current = e.touches[0].clientY;
+      touchStartTimestampRef.current = Date.now();
+    }
+  };
+
+  // Handle touch move to detect scrolling
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartYRef.current !== null && e.touches.length === 1) {
+      const touchY = e.touches[0].clientY;
+      const deltaY = Math.abs(touchY - touchStartYRef.current);
+      
+      // If user moves finger more than 10px vertically, they're probably scrolling
+      if (deltaY > 10) {
+        setIsUserScrolling(true);
+      }
+    }
+  };
+
+  // Handle touch end to reset scrolling state
+  const handleTouchEnd = () => {
+    // Reset touch tracking
+    touchStartYRef.current = null;
+    touchStartTimestampRef.current = null;
+    
+    // Small delay to ensure click handlers complete before resetting scroll state
+    setTimeout(() => {
+      setIsUserScrolling(false);
+    }, 100);
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div 
+      className="bg-white rounded-lg shadow-md overflow-hidden" 
+      ref={inventoryRef}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="p-4 bg-gray-800 text-white">
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-montserrat font-bold flex items-center">
@@ -112,7 +159,9 @@ const Inventory = () => {
       <div className={`transition-all duration-300 ease-in-out 
                      ${isCollapsed 
                        ? 'max-h-0 opacity-0 overflow-hidden' 
-                       : 'p-4 grid grid-cols-2 gap-4 max-h-[calc(100vh-280px)] overflow-y-auto opacity-100'
+                       : 'p-4 grid grid-cols-2 gap-4 overflow-y-auto opacity-100 ' + 
+                         /* Half the height on mobile */ 
+                         'max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-280px)] sm:max-h-[160px]'
                      }`}>
         {filteredInventory.length > 0 ? (
           filteredInventory.map((flag) => (

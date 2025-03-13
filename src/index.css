@@ -54,3 +54,11 @@ html, body {
   -o-user-drag: none;
   user-drag: none;
 }
+
+/* Custom inventory height for mobile */
+@media (max-width: 768px) {
+  .inventory-grid-mobile {
+    max-height: 160px !important;
+    transition: max-height 0.3s ease-in-out;
+  }
+}
