@@ -43,6 +43,7 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   return (
     <div
       ref={(node) => {
+        // This pattern ensures we maintain both the ref for sizing and the DnD functionality
         drag(node);
         flagRef.current = node;
       }}

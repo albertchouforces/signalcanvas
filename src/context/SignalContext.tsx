@@ -1,6 +1,6 @@
 import { createContext, useState, useContext, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { nanoid } from 'nanoid';
-import { signalFlags, pennants, getAllSignals } from '../data/signalFlags';
+import { getAllSignals } from '../data/signalFlags';
 import html2canvas from 'html2canvas';
 
 export interface Flag {
@@ -51,7 +51,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
-    setInventory(getAllSignals());
+    // Type assertion to ensure getAllSignals() matches the Flag[] type
+    setInventory(getAllSignals() as Flag[]);
   }, []);
 
   // Load placed flags from localStorage

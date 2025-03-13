@@ -52,13 +52,6 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-    end: (item, monitor) => {
-      // If the drag ended but was not dropped on a compatible target
-      if (!monitor.didDrop()) {
-        // Keep the flag in its original position
-        return;
-      }
-    }
   }), [flag.id, flag.type, isDraggingOnBoard]);
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -72,6 +65,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   return (
     <div
       ref={(node) => {
+        // This pattern ensures we maintain both the ref for measuring and the DnD functionality
         drag(node);
         flagRef.current = node;
       }}

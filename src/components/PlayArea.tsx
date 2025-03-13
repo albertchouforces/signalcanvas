@@ -204,8 +204,10 @@ const PlayArea = () => {
         {/* Scrollable content area */}
         <div
           ref={(node) => {
+            // This ensures both the drop functionality and our ref for dimensions work together
             drop(node);
-            if (node) {
+            // Update the context ref
+            if (playAreaRef) {
               playAreaRef.current = node;
             }
           }}
