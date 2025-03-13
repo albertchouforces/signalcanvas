@@ -62,14 +62,21 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
+  // Create a ref callback that combines the drag ref and the measurement ref
+  const setRefs = (node: HTMLDivElement | null) => {
+    // Apply the drag behavior to the node
+    drag(node);
+    
+    // Update our measurement ref without directly setting current
+    // React will handle updating the ref.current for us behind the scenes
+    if (node !== null) {
+      flagRef.current = node;
+    }
+  };
+
   return (
     <div
-      ref={(node) => {
-        // This ensures we get both the drag behavior and keep our measurement ref
-        drag(node);
-        // Use the ref callback pattern to update the ref value
-        flagRef.current = node;
-      }}
+      ref={setRefs}
       className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'}`}
       style={{
         left: `${flag.left}px`,
