@@ -186,7 +186,7 @@ const Inventory = () => {
   };
 
   // Handle touch end to reset scrolling state
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = () => {
     // Skip if it was a page scroll
     if (isPageScrollRef.current) {
       // Don't reset immediately, let the global scroll handler handle it
