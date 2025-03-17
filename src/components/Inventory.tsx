@@ -15,6 +15,12 @@ const Inventory = () => {
   const inventoryRef = useRef<HTMLDivElement | null>(null);
   const scrollTimerRef = useRef<number | null>(null);
   const ignoreNextCollapseRef = useRef<boolean>(false);
+  // Track if we're handling a global page scroll vs inventory scroll
+  const isPageScrollRef = useRef<boolean>(false);
+  // Add a lock to prevent collapse during page scrolling
+  const preventCollapseRef = useRef<boolean>(false);
+  // Last scroll position to detect direction
+  const lastScrollPositionRef = useRef<number>(0);
 
   // Check if we're on mobile when component mounts and set initial collapsed state
   useEffect(() => {
@@ -31,6 +37,57 @@ const Inventory = () => {
     
     return () => {
       window.removeEventListener('resize', checkMobile);
+    };
+  }, []);
+
+  // Add global scroll listener to detect page scrolling
+  useEffect(() => {
+    const handleGlobalScroll = () => {
+      // Mark that we're in a global page scroll
+      isPageScrollRef.current = true;
+      // Prevent collapse during page scrolling
+      preventCollapseRef.current = true;
+      
+      // Get current scroll position
+      const currentScrollY = window.scrollY;
+      
+      // Determine if user is scrolling past the inventory
+      const inventoryElement = inventoryRef.current;
+      if (inventoryElement) {
+        const inventoryRect = inventoryElement.getBoundingClientRect();
+        // If inventory is moving out of view (top edge above viewport)
+        if (inventoryRect.top < 0) {
+          // Specifically prevent collapse when scrolling past inventory
+          preventCollapseRef.current = true;
+        }
+      }
+      
+      // Update last scroll position
+      lastScrollPositionRef.current = currentScrollY;
+      
+      // Clear any existing scroll timer
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      
+      // Reset flags after scrolling stops
+      scrollTimerRef.current = setTimeout(() => {
+        isPageScrollRef.current = false;
+        // Keep prevent collapse on for a bit longer to avoid false triggers
+        setTimeout(() => {
+          preventCollapseRef.current = false;
+        }, 500);
+      }, 250);
+    };
+    
+    // Add global scroll listener
+    window.addEventListener('scroll', handleGlobalScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleGlobalScroll);
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
     };
   }, []);
 
@@ -51,8 +108,8 @@ const Inventory = () => {
       return;
     }
     
-    // Only toggle if user is not actively scrolling
-    if (!isUserScrolling) {
+    // Only toggle if user is not actively scrolling and we're not in a prevent collapse state
+    if (!isUserScrolling && !preventCollapseRef.current && !isPageScrollRef.current) {
       setIsCollapsed(!isCollapsed);
     }
   };
@@ -74,44 +131,68 @@ const Inventory = () => {
 
   // Handle scroll start
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Store initial touch position and timestamp
-    if (e.touches.length === 1) {
-      touchStartYRef.current = e.touches[0].clientY;
-      touchStartTimestampRef.current = Date.now();
+    // Only track if it's an internal inventory scroll, not a page scroll
+    if (e.currentTarget === inventoryRef.current || e.currentTarget.contains(e.target as Node)) {
+      // Store initial touch position and timestamp
+      if (e.touches.length === 1) {
+        touchStartYRef.current = e.touches[0].clientY;
+        touchStartTimestampRef.current = Date.now();
+      }
+    } else {
+      // This is a page scroll, not an inventory scroll
+      isPageScrollRef.current = true;
+      preventCollapseRef.current = true;
     }
   };
 
   // Handle touch move to detect scrolling
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStartYRef.current !== null && e.touches.length === 1) {
-      const touchY = e.touches[0].clientY;
-      const deltaY = Math.abs(touchY - touchStartYRef.current);
-      
-      // If user moves finger more than 10px vertically, they're probably scrolling
-      if (deltaY > 10) {
-        setIsUserScrolling(true);
-        // Indicate we should ignore the next collapse action
-        ignoreNextCollapseRef.current = true;
+    // Skip if we detect page scrolling
+    if (isPageScrollRef.current) {
+      preventCollapseRef.current = true;
+      return;
+    }
+    
+    // Only process if we're inside the inventory
+    if (e.currentTarget === inventoryRef.current || e.currentTarget.contains(e.target as Node)) {
+      if (touchStartYRef.current !== null && e.touches.length === 1) {
+        const touchY = e.touches[0].clientY;
+        const deltaY = Math.abs(touchY - touchStartYRef.current);
         
-        // Clear any existing scroll timer
-        if (scrollTimerRef.current) {
-          clearTimeout(scrollTimerRef.current);
+        // If user moves finger more than 10px vertically, they're probably scrolling
+        if (deltaY > 10) {
+          setIsUserScrolling(true);
+          // Indicate we should ignore the next collapse action
+          ignoreNextCollapseRef.current = true;
+          preventCollapseRef.current = true;
+          
+          // Clear any existing scroll timer
+          if (scrollTimerRef.current) {
+            clearTimeout(scrollTimerRef.current);
+          }
+          
+          // Set a timer to reset the scroll state after scrolling stops
+          scrollTimerRef.current = setTimeout(() => {
+            setIsUserScrolling(false);
+            // Keep the ignore flag true for a short period after scrolling
+            setTimeout(() => {
+              ignoreNextCollapseRef.current = false;
+              preventCollapseRef.current = false;
+            }, 500);
+          }, 250);
         }
-        
-        // Set a timer to reset the scroll state after scrolling stops
-        scrollTimerRef.current = setTimeout(() => {
-          setIsUserScrolling(false);
-          // Keep the ignore flag true for a short period after scrolling
-          setTimeout(() => {
-            ignoreNextCollapseRef.current = false;
-          }, 300);
-        }, 200);
       }
     }
   };
 
   // Handle touch end to reset scrolling state
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Skip if it was a page scroll
+    if (isPageScrollRef.current) {
+      // Don't reset immediately, let the global scroll handler handle it
+      return;
+    }
+    
     // Reset touch tracking
     touchStartYRef.current = null;
     touchStartTimestampRef.current = null;
@@ -125,28 +206,38 @@ const Inventory = () => {
     // Small delay to ensure click handlers complete before resetting scroll state
     setTimeout(() => {
       setIsUserScrolling(false);
+      // Wait a bit longer to clear ignore flag
+      setTimeout(() => {
+        ignoreNextCollapseRef.current = false;
+        preventCollapseRef.current = false;
+      }, 300);
     }, 250);
   };
 
   // Handle scroll events directly
-  const handleScroll = () => {
-    // Mark as scrolling when a scroll event occurs
-    setIsUserScrolling(true);
-    ignoreNextCollapseRef.current = true;
-    
-    // Clear any existing scroll timer
-    if (scrollTimerRef.current) {
-      clearTimeout(scrollTimerRef.current);
+  const handleScroll = (e: React.UIEvent) => {
+    // Only process internal inventory scrolling
+    if (e.currentTarget === inventoryRef.current || e.currentTarget.contains(e.target as Node)) {
+      // Mark as scrolling when a scroll event occurs
+      setIsUserScrolling(true);
+      ignoreNextCollapseRef.current = true;
+      preventCollapseRef.current = true;
+      
+      // Clear any existing scroll timer
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      
+      // Set a timer to reset the scroll state after scrolling stops
+      scrollTimerRef.current = setTimeout(() => {
+        setIsUserScrolling(false);
+        // Keep the ignore flag true for a short period after scrolling
+        setTimeout(() => {
+          ignoreNextCollapseRef.current = false;
+          preventCollapseRef.current = false;
+        }, 500);
+      }, 250);
     }
-    
-    // Set a timer to reset the scroll state after scrolling stops
-    scrollTimerRef.current = setTimeout(() => {
-      setIsUserScrolling(false);
-      // Keep the ignore flag true for a short period after scrolling
-      setTimeout(() => {
-        ignoreNextCollapseRef.current = false;
-      }, 300);
-    }, 200);
   };
 
   // Clean up timers on component unmount
@@ -180,7 +271,7 @@ const Inventory = () => {
                       hover:bg-gray-600 transition-colors text-white"
             aria-label={isCollapsed ? "Expand inventory" : "Collapse inventory"}
             // Disable the button while user is scrolling to prevent accidental toggles
-            disabled={isUserScrolling}
+            disabled={isUserScrolling || preventCollapseRef.current}
           >
             {isCollapsed ? (
               <ChevronDown className="w-4 h-4 stroke-[2.5px]" />
