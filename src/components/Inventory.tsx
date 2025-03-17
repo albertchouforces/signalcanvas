@@ -13,6 +13,8 @@ const Inventory = () => {
   const touchStartYRef = useRef<number | null>(null);
   const touchStartTimestampRef = useRef<number | null>(null);
   const inventoryRef = useRef<HTMLDivElement | null>(null);
+  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const ignoreNextCollapseRef = useRef<boolean>(false);
 
   // Check if we're on mobile when component mounts and set initial collapsed state
   useEffect(() => {
@@ -43,6 +45,12 @@ const Inventory = () => {
 
   // Toggle collapsed state - only triggered by explicit button press
   const toggleCollapse = () => {
+    // If we're supposed to ignore this collapse action, reset the flag and return
+    if (ignoreNextCollapseRef.current) {
+      ignoreNextCollapseRef.current = false;
+      return;
+    }
+    
     // Only toggle if user is not actively scrolling
     if (!isUserScrolling) {
       setIsCollapsed(!isCollapsed);
@@ -82,6 +90,22 @@ const Inventory = () => {
       // If user moves finger more than 10px vertically, they're probably scrolling
       if (deltaY > 10) {
         setIsUserScrolling(true);
+        // Indicate we should ignore the next collapse action
+        ignoreNextCollapseRef.current = true;
+        
+        // Clear any existing scroll timer
+        if (scrollTimerRef.current) {
+          clearTimeout(scrollTimerRef.current);
+        }
+        
+        // Set a timer to reset the scroll state after scrolling stops
+        scrollTimerRef.current = setTimeout(() => {
+          setIsUserScrolling(false);
+          // Keep the ignore flag true for a short period after scrolling
+          setTimeout(() => {
+            ignoreNextCollapseRef.current = false;
+          }, 300);
+        }, 200);
       }
     }
   };
@@ -92,11 +116,47 @@ const Inventory = () => {
     touchStartYRef.current = null;
     touchStartTimestampRef.current = null;
     
+    // Clear any existing scroll timer
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+      scrollTimerRef.current = null;
+    }
+    
     // Small delay to ensure click handlers complete before resetting scroll state
     setTimeout(() => {
       setIsUserScrolling(false);
-    }, 100);
+    }, 250);
   };
+
+  // Handle scroll events directly
+  const handleScroll = () => {
+    // Mark as scrolling when a scroll event occurs
+    setIsUserScrolling(true);
+    ignoreNextCollapseRef.current = true;
+    
+    // Clear any existing scroll timer
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+    }
+    
+    // Set a timer to reset the scroll state after scrolling stops
+    scrollTimerRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+      // Keep the ignore flag true for a short period after scrolling
+      setTimeout(() => {
+        ignoreNextCollapseRef.current = false;
+      }, 300);
+    }, 200);
+  };
+
+  // Clean up timers on component unmount
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div 
@@ -105,6 +165,7 @@ const Inventory = () => {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
+      onScroll={handleScroll}
     >
       <div className="p-4 bg-gray-800 text-white">
         <div className="flex justify-between items-center">
@@ -118,6 +179,8 @@ const Inventory = () => {
             className="md:hidden flex items-center justify-center p-1.5 rounded-md bg-gray-700 
                       hover:bg-gray-600 transition-colors text-white"
             aria-label={isCollapsed ? "Expand inventory" : "Collapse inventory"}
+            // Disable the button while user is scrolling to prevent accidental toggles
+            disabled={isUserScrolling}
           >
             {isCollapsed ? (
               <ChevronDown className="w-4 h-4 stroke-[2.5px]" />

@@ -62,3 +62,21 @@ html, body {
     transition: max-height 0.3s ease-in-out;
   }
 }
+
+/* Ensure touch events work properly for draggable elements */
+[data-rbd-drag-handle-draggable-id] {
+  touch-action: none;
+}
+
+/* Ensure elements are draggable on touch devices */
+.cursor-grab {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Fix for iOS touch events */
+.touch-none {
+  touch-action: none !important;
+  -webkit-touch-callout: none !important;
+}

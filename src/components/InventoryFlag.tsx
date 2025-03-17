@@ -32,6 +32,14 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
         } : null,
       };
     },
+    options: {
+      // Enable touch events for DnD to ensure mobile drag works
+      enableTouchEvents: true,
+      // Prevent delay on touch devices to make dragging more responsive
+      delayTouchStart: 0,
+      // Specify a low distance threshold to start touch drags quickly
+      touchStartThreshold: 5,
+    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -39,6 +47,11 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
 
   // Prevent default touch behavior to avoid image selection dialog
   const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+  };
+
+  // Handle touch move to prevent scrolling while dragging
+  const handleTouchMove = (e: React.TouchEvent) => {
     e.preventDefault();
   };
 
@@ -65,20 +78,26 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
       style={{ 
         zIndex: isDragging ? 100 : 10,
         pointerEvents: isDragging ? 'none' : 'auto',
+        touchAction: 'none',
       }}
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
     >
       <img
         ref={imageRefCallback}
         src={flag.image}
         alt={flag.name}
         className="h-16 w-auto object-contain mb-2 no-select no-touch-action no-drag-image"
-        style={isTackline ? {
-          maxWidth: '64px',  // Match width in inventory
-          height: '48px',    // Slightly smaller height
-          objectFit: 'contain',
-          objectPosition: 'center'
-        } : undefined}
+        style={{
+          ...(isTackline ? {
+            maxWidth: '64px',  // Match width in inventory
+            height: '48px',    // Slightly smaller height
+            objectFit: 'contain',
+            objectPosition: 'center'
+          } : {}),
+          touchAction: 'none',
+          WebkitUserSelect: 'none',
+        }}
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
       />
