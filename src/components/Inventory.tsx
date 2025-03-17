@@ -13,7 +13,7 @@ const Inventory = () => {
   const touchStartYRef = useRef<number | null>(null);
   const touchStartTimestampRef = useRef<number | null>(null);
   const inventoryRef = useRef<HTMLDivElement | null>(null);
-  const scrollTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollTimerRef = useRef<number | null>(null);
   const ignoreNextCollapseRef = useRef<boolean>(false);
 
   // Check if we're on mobile when component mounts and set initial collapsed state
