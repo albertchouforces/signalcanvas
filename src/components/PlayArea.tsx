@@ -138,10 +138,6 @@ const PlayArea = () => {
 
   const [, drop] = useDrop(() => ({
     accept: 'FLAG',
-    options: {
-      // Enable touch events for DnD to ensure mobile drag works
-      enableTouchEvents: true,
-    },
     drop: (item: { 
       type: string; 
       id?: string; 
@@ -222,12 +218,11 @@ const PlayArea = () => {
         {/* Scrollable content area */}
         <div
           ref={playAreaRefCallback}
-          className="absolute top-0 left-0 w-full h-full bg-transparent touch-none"
+          className="absolute top-0 left-0 w-full h-full bg-transparent"
           style={{
             overflowX: 'auto',
             overflowY: 'auto',
             zIndex: 2,
-            touchAction: 'auto', // Allow scrolling the container
           }}
         >
           {placedFlags.map((flag) => (
@@ -239,15 +234,11 @@ const PlayArea = () => {
           ))}
         </div>
 
-        {/* Canvas control buttons - only visible on hover or touch */}
+        {/* Canvas control buttons - only visible on hover */}
         <div 
           className={`canvas-control-buttons absolute bottom-4 right-4 flex space-x-2 transition-opacity duration-300 z-10 ${
-            isHovering ? 'opacity-100' : 'opacity-0 md:opacity-0'
+            isHovering ? 'opacity-100' : 'opacity-0'
           }`}
-          style={{
-            // Always visible on mobile even without hover
-            opacity: isHovering ? 1 : (window.innerWidth < 768 ? 0.8 : 0)
-          }}
         >
           <button
             onClick={copyBoardToClipboard}

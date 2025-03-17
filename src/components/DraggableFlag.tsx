@@ -50,14 +50,6 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
         } : null,
       };
     },
-    options: {
-      // Enable touch events for DnD to ensure mobile drag works
-      enableTouchEvents: true,
-      // Prevent delay on touch devices to make dragging more responsive
-      delayTouchStart: 0,
-      // Specify a low distance threshold to start touch drags quickly
-      touchStartThreshold: 5,
-    },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
@@ -68,21 +60,10 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     removeFlag(flag.id);
   };
 
-  // Prevent default touch behavior to avoid image selection dialog on all touch events
+  // Prevent default touch behavior to avoid image selection dialog
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
-    // Don't stop propagation here - we need the event to bubble up for drag
   }; 
-
-  // Handle touch move to ensure drag works smoothly on mobile
-  const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault(); // Prevent scrolling while dragging
-  };
-
-  // Handle touch end to ensure clean drag completion
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
-  };
 
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
@@ -103,13 +84,10 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
         zIndex: isDragging ? 100 : 10,
         transform: 'translate(-50%, -50%)', // Center the flag at the position
         pointerEvents: isDragging ? 'none' : 'auto',
-        touchAction: 'none', // Critical for mobile drag & drop
       }}
       onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
-      <div className="relative group touch-none">
+      <div className="relative group">
         <img
           src={flag.image}
           alt={flag.name}
@@ -126,8 +104,6 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
             transition: 'transform 0.2s ease', // Smooth transition when flipping
             minWidth: isTackline ? '64px' : '48px', // Ensure minimum width
             minHeight: isTackline ? '48px' : '64px', // Ensure minimum height
-            touchAction: 'none', // Prevent default touch behaviors
-            WebkitUserSelect: 'none', // Prevent text selection on iOS
           }}
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
@@ -135,9 +111,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
         <button
           onClick={handleRemove}
           className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 
-                    opacity-0 group-hover:opacity-100 transition-opacity
-                    md:group-hover:opacity-100 touch-none"
-          style={{ touchAction: 'none' }}
+                    opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <X className="h-3 w-3" />
         </button>
