@@ -22,23 +22,19 @@ const Inventory = () => {
   // Last scroll position to detect direction
   const lastScrollPositionRef = useRef<number>(0);
 
-  // Check if we're on mobile when component mounts and set initial collapsed state
+  // Load saved collapse state from localStorage
   useEffect(() => {
-    const checkMobile = () => {
-      const isMobile = window.innerWidth < 768;
-      setIsCollapsed(isMobile);
-    };
-    
-    // Check on initial load
-    checkMobile();
-    
-    // Listen for resize events to update collapse state when rotating device or resizing window
-    window.addEventListener('resize', checkMobile);
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile);
-    };
+    const savedCollapseState = localStorage.getItem('inventoryCollapsed');
+    if (savedCollapseState !== null) {
+      setIsCollapsed(savedCollapseState === 'true');
+    }
+    // Note: We're NOT checking for mobile here anymore, so it won't auto-collapse
   }, []);
+
+  // Save collapse state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('inventoryCollapsed', isCollapsed.toString());
+  }, [isCollapsed]);
 
   // Add global scroll listener to detect page scrolling
   useEffect(() => {
@@ -215,29 +211,26 @@ const Inventory = () => {
   };
 
   // Handle scroll events directly
-  const handleScroll = (e: React.UIEvent) => {
-    // Only process internal inventory scrolling
-    if (e.currentTarget === inventoryRef.current || e.currentTarget.contains(e.target as Node)) {
-      // Mark as scrolling when a scroll event occurs
-      setIsUserScrolling(true);
-      ignoreNextCollapseRef.current = true;
-      preventCollapseRef.current = true;
-      
-      // Clear any existing scroll timer
-      if (scrollTimerRef.current) {
-        clearTimeout(scrollTimerRef.current);
-      }
-      
-      // Set a timer to reset the scroll state after scrolling stops
-      scrollTimerRef.current = setTimeout(() => {
-        setIsUserScrolling(false);
-        // Keep the ignore flag true for a short period after scrolling
-        setTimeout(() => {
-          ignoreNextCollapseRef.current = false;
-          preventCollapseRef.current = false;
-        }, 500);
-      }, 250);
+  const handleScroll = () => {
+    // Mark as scrolling when a scroll event occurs
+    setIsUserScrolling(true);
+    ignoreNextCollapseRef.current = true;
+    preventCollapseRef.current = true;
+    
+    // Clear any existing scroll timer
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
     }
+    
+    // Set a timer to reset the scroll state after scrolling stops
+    scrollTimerRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+      // Keep the ignore flag true for a short period after scrolling
+      setTimeout(() => {
+        ignoreNextCollapseRef.current = false;
+        preventCollapseRef.current = false;
+      }, 500);
+    }, 250);
   };
 
   // Clean up timers on component unmount
