@@ -149,7 +149,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Default values if play area is not available
       return {
         startX: isMobile ? 40 : 80, // Reduced indentation for mobile
-        startY: 50, // Further reduced from 80px to 60px to allow an extra flag on the bottom row
+        startY: 55, // Further reduced from 80px to 60px to allow an extra flag on the bottom row
         itemWidth: 64, // Default flag width
         itemHeight: 64, // Default flag height
         horizontalSpacing: 20, // Default horizontal spacing between flags
@@ -186,7 +186,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     return {
       startX,
-      startY: 50, // Further reduced top padding from 80px to 60px for more vertical space
+      startY: 55, // Further reduced top padding from 80px to 60px for more vertical space
       itemWidth,
       itemHeight,
       horizontalSpacing,
