@@ -153,7 +153,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         itemWidth: 64, // Default flag width
         itemHeight: 64, // Default flag height
         horizontalSpacing: 20, // Default horizontal spacing between flags
-        verticalSpacing: 20, // Default vertical spacing between flags
+        verticalSpacing: isMobile ? 16 : 20, // Reduced vertical spacing on mobile to fit more flags
         maxItemsPerColumn: 5, // Default maximum items per column for mobile
       };
     }
@@ -167,12 +167,14 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const itemWidth = 64; // Flag width
     const itemHeight = 64; // Flag height
     
-    // Spacing
+    // Spacing - use reduced spacing on mobile to maximize flag count
     const horizontalSpacing = 20;
-    const verticalSpacing = 20;
+    const verticalSpacing = isMobile ? 16 : 20; // Reduced vertical spacing on mobile
     
     // Calculate how many flags can fit in a column with proper spacing
-    const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - 100) / (itemHeight + verticalSpacing)));
+    // Reduced buffer from 100px to 70px to allow for more flags per column
+    const heightBuffer = isMobile ? 70 : 100;
+    const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - heightBuffer) / (itemHeight + verticalSpacing)));
     
     // Start position - adjusted for mobile with reduced left padding
     // For mobile, use a fixed smaller indentation from the left
@@ -191,7 +193,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      maxItemsPerColumn: isMobile ? Math.min(maxItemsPerColumn, 5) : maxItemsPerColumn, // Limit to 5 items per column on mobile
+      // Allow up to maxItemsPerColumn on mobile without artificial cap at 5
+      // This ensures we use all available space while ensuring consistent alignment
+      maxItemsPerColumn,
     };
   }, []);
 
