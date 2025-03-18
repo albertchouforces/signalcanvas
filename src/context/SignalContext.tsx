@@ -20,8 +20,6 @@ export interface PlacedFlag extends Flag {
 interface SignalContextType {
   inventory: Flag[];
   placedFlags: PlacedFlag[];
-  selectedFlagId: string | null;
-  selectFlag: (id: string | null) => void;
   addFlag: (flagType: string, left: number, top: number) => void;
   moveFlag: (id: string, left: number, top: number) => void;
   removeFlag: (id: string) => void;
@@ -30,7 +28,6 @@ interface SignalContextType {
   notification: { message: string, type: 'success' | 'error' | '' } | null;
   getPlayAreaNode: () => HTMLElement | null;
   updatePlayAreaRef: (node: HTMLElement | null) => void;
-  isTouchDevice: boolean;
 }
 
 const SignalContext = createContext<SignalContextType | undefined>(undefined);
@@ -51,29 +48,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const [inventory, setInventory] = useState<Flag[]>([]);
   const [placedFlags, setPlacedFlags] = useState<PlacedFlag[]>([]);
   const [notification, setNotification] = useState<{ message: string, type: 'success' | 'error' | '' } | null>(null);
-  const [selectedFlagId, setSelectedFlagId] = useState<string | null>(null);
-  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(false);
   const playAreaRef = useRef<HTMLElement | null>(null);
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
     // Type assertion to ensure getAllSignals() matches the Flag[] type
     setInventory(getAllSignals() as Flag[]);
-  }, []);
-
-  // Detect if this is a touch device
-  useEffect(() => {
-    const detectTouch = () => {
-      setIsTouchDevice(true);
-      // Remove the listener once we've detected touch
-      window.removeEventListener('touchstart', detectTouch);
-    };
-    
-    window.addEventListener('touchstart', detectTouch, { passive: true });
-    
-    return () => {
-      window.removeEventListener('touchstart', detectTouch);
-    };
   }, []);
 
   // Load placed flags from localStorage
@@ -103,11 +83,6 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     localStorage.setItem('placedFlags', JSON.stringify(placedFlags));
   }, [placedFlags]);
 
-  // Select a flag
-  const selectFlag = useCallback((id: string | null) => {
-    setSelectedFlagId(id);
-  }, []);
-
   const addFlag = useCallback((flagType: string, left: number, top: number) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
     if (!flagToAdd) return;
@@ -120,32 +95,20 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     };
 
     setPlacedFlags(prev => [...prev, newFlag]);
-    
-    // Deselect after adding
-    setSelectedFlagId(null);
   }, [inventory]);
 
   const moveFlag = useCallback((id: string, left: number, top: number) => {
     setPlacedFlags(prev =>
       prev.map((flag) => (flag.id === id ? { ...flag, left, top } : flag))
     );
-    
-    // Deselect after moving
-    setSelectedFlagId(null);
   }, []);
 
   const removeFlag = useCallback((id: string) => {
     setPlacedFlags(prev => prev.filter((flag) => flag.id !== id));
-    
-    // If we're removing the selected flag, clear selection
-    if (selectedFlagId === id) {
-      setSelectedFlagId(null);
-    }
-  }, [selectedFlagId]);
+  }, []);
 
   const clearBoard = useCallback(() => {
     setPlacedFlags([]);
-    setSelectedFlagId(null);
     setNotification({ message: 'Board cleared', type: 'success' });
   }, []);
 
@@ -270,8 +233,6 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const value = {
     inventory,
     placedFlags,
-    selectedFlagId,
-    selectFlag,
     addFlag,
     moveFlag,
     removeFlag,
@@ -280,7 +241,6 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     notification,
     getPlayAreaNode,
     updatePlayAreaRef,
-    isTouchDevice,
   };
 
   return <SignalContext.Provider value={value}>{children}</SignalContext.Provider>;

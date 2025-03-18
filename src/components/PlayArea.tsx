@@ -2,65 +2,16 @@ import { useDrop } from 'react-dnd';
 import { useSignal } from '../context/SignalContext';
 import DraggableFlag from './DraggableFlag';
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Trash2, CircleX } from 'lucide-react';
+import { Camera, Trash2 } from 'lucide-react';
 
 const PlayArea = () => {
-  const { 
-    placedFlags, 
-    addFlag, 
-    moveFlag, 
-    updatePlayAreaRef, 
-    clearBoard, 
-    copyBoardToClipboard, 
-    selectedFlagId,
-    selectFlag,
-    isTouchDevice 
-  } = useSignal();
-  
+  const { placedFlags, addFlag, moveFlag, updatePlayAreaRef, clearBoard, copyBoardToClipboard } = useSignal();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
   const [isHovering, setIsHovering] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  
-  // Global event listeners to detect when dragging starts/ends
-  useEffect(() => {
-    // DnD library doesn't expose global drag state easily, so we add our own listeners
-    const handleDragStart = () => {
-      setIsDragging(true);
-      document.body.classList.add('drag-in-progress');
-    };
-
-    const handleDragEnd = () => {
-      setIsDragging(false);
-      document.body.classList.remove('drag-in-progress');
-    };
-
-    window.addEventListener('dragstart', handleDragStart);
-    window.addEventListener('dragend', handleDragEnd);
-    
-    // Also listen for touch events that might indicate drag
-    window.addEventListener('touchmove', () => {
-      if (isDragging) {
-        // Prevent any default touch behaviors during drag
-        document.body.classList.add('drag-in-progress');
-      }
-    });
-
-    // Listen for mouse events as well
-    window.addEventListener('mousedown', () => {
-      document.body.classList.remove('drag-in-progress');
-    });
-
-    return () => {
-      window.removeEventListener('dragstart', handleDragStart);
-      window.removeEventListener('dragend', handleDragEnd);
-      window.removeEventListener('mousedown', () => {});
-      document.body.classList.remove('drag-in-progress');
-    };
-  }, [isDragging]);
   
   // Load and measure the background image to set proper dimensions
   useEffect(() => {
@@ -185,20 +136,6 @@ const PlayArea = () => {
     }
   }, [containerWidth, containerHeight, placedFlags, backgroundImageLoaded, naturalAspectRatio]);
 
-  // Clear flag selection when clicking on empty canvas area
-  const handleCanvasClick = (e: React.MouseEvent | React.TouchEvent) => {
-    // Only process if we have a selection and we're on a touch device
-    if (selectedFlagId && isTouchDevice) {
-      // Check if we clicked/tapped on a flag
-      const isOnFlag = (e.target as HTMLElement).closest('.draggable-flag');
-      
-      // If not clicking on a flag, clear the selection
-      if (!isOnFlag) {
-        selectFlag(null);
-      }
-    }
-  };
-  
   const [, drop] = useDrop(() => ({
     accept: 'FLAG',
     drop: (item: { 
@@ -238,63 +175,8 @@ const PlayArea = () => {
         // Adding a new flag from inventory
         addFlag(item.type, left, top);
       }
-    },
-    // Ensure the dropTarget receives hover properly (important for mouse interactions)
-    hover: (_, monitor) => {
-      // This helps ensure the drag over events are properly processed
-      return monitor.isOver();
     }
   }), [addFlag, moveFlag]);
-
-  // Handle touch events for showing controls on mobile
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Detect touch on the background vs. on a flag
-    const target = e.target as HTMLElement;
-    const isTouchingFlag = !!target.closest('.draggable-flag');
-    
-    // If touching the background (not a flag), show controls
-    if (isTouchDevice && !isTouchingFlag) {
-      // Don't prevent default here to allow scrolling
-      setIsHovering(true);
-      
-      // Handle canvas tap (to clear selection if needed)
-      handleCanvasClick(e);
-      
-      // Hide controls after a delay, unless disabled for touch devices
-      if (!isTouchDevice) {
-        setTimeout(() => {
-          setIsHovering(false);
-        }, 3000);
-      }
-    }
-  };
-
-  // For mouse interaction
-  const handleMouseEvents = {
-    onMouseEnter: () => setIsHovering(true),
-    onMouseLeave: () => setIsHovering(false),
-    onClick: (e: React.MouseEvent) => handleCanvasClick(e),
-  };
-
-  // Prevent touch selection behaviors on touch devices only
-  const preventTouchSelection = (e: React.TouchEvent) => {
-    if (isTouchDevice) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-  };
-
-  // Enhanced button click handler for mobile
-  const handleButtonClick = (callback: () => void) => (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    callback();
-  };
-
-  // Cancel flag selection
-  const cancelSelection = () => {
-    selectFlag(null);
-  };
 
   // Use this callback to update the context without direct .current assignments
   const playAreaRefCallback = (node: HTMLDivElement | null) => {
@@ -309,7 +191,8 @@ const PlayArea = () => {
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden"
       ref={containerRef}
-      {...(isTouchDevice ? { onTouchStart: handleTouchStart } : handleMouseEvents)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {/* Canvas container with height exactly matching the background image */}
       <div 
@@ -322,7 +205,7 @@ const PlayArea = () => {
       >
         {/* Background image that fills the container exactly */}
         <div 
-          className="absolute top-0 left-0 w-full h-full pointer-events-none no-mobile-selection"
+          className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
             backgroundImage: 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)',
             backgroundSize: 'contain',
@@ -330,25 +213,16 @@ const PlayArea = () => {
             backgroundRepeat: 'no-repeat',
             zIndex: 1,
           }}
-          onTouchStart={isTouchDevice ? preventTouchSelection : undefined}
-          onTouchMove={isTouchDevice ? preventTouchSelection : undefined}
-          onTouchEnd={isTouchDevice ? preventTouchSelection : undefined}
         />
         
         {/* Scrollable content area */}
         <div
           ref={playAreaRefCallback}
-          className="absolute top-0 left-0 w-full h-full bg-transparent no-mobile-selection"
+          className="absolute top-0 left-0 w-full h-full bg-transparent"
           style={{
             overflowX: 'auto',
             overflowY: 'auto',
             zIndex: 2,
-          }}
-          onTouchStart={(e) => {
-            // Only prevent default if we're on a touch device and not targeting a flag
-            if (isTouchDevice && !(e.target as HTMLElement).closest('.draggable-flag')) {
-              e.preventDefault();
-            }
           }}
         >
           {placedFlags.map((flag) => (
@@ -360,57 +234,36 @@ const PlayArea = () => {
           ))}
         </div>
 
-        {/* Canvas control buttons - visible on hover on desktop and always visible on mobile */}
+        {/* Canvas control buttons - only visible on hover */}
         <div 
           className={`canvas-control-buttons absolute bottom-4 right-4 flex space-x-2 transition-opacity duration-300 z-10 ${
-            isHovering || isTouchDevice ? 'opacity-100' : 'opacity-0'
-          } no-mobile-selection`}
+            isHovering ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           <button
-            onClick={handleButtonClick(copyBoardToClipboard)}
+            onClick={copyBoardToClipboard}
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 
                     active:bg-blue-800 transition-all duration-200 shadow-sm hover:shadow
                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
-                    hover:scale-[1.02] active:scale-[0.98] no-tap-highlight"
+                    hover:scale-[1.02] active:scale-[0.98]"
             aria-label="Copy board to clipboard"
-            style={{
-              // Larger touch target for mobile
-              minHeight: isTouchDevice ? '44px' : 'auto',
-              touchAction: 'manipulation',
-            }}
           >
             <Camera className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
             <span className="text-sm font-medium">Copy</span>
           </button>
           <button
-            onClick={handleButtonClick(clearBoard)}
+            onClick={clearBoard}
             className="flex items-center px-3 py-2 bg-white text-red-600 border border-red-200 rounded-md 
                     hover:bg-red-50 active:bg-red-100 transition-all duration-200 shadow-sm hover:shadow
                     focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
-                    hover:scale-[1.02] active:scale-[0.98] no-tap-highlight"
+                    hover:scale-[1.02] active:scale-[0.98]"
             aria-label="Clear all flags from board"
-            style={{
-              // Larger touch target for mobile
-              minHeight: isTouchDevice ? '44px' : 'auto',
-              touchAction: 'manipulation',
-            }}
           >
             <Trash2 className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
             <span className="text-sm font-medium">Clear</span>
           </button>
         </div>
       </div>
-      
-      {/* Cancel selection button - only shown on mobile when a flag is selected */}
-      {isTouchDevice && selectedFlagId && (
-        <button 
-          onClick={cancelSelection}
-          className="cancel-selection no-tap-highlight"
-        >
-          <CircleX className="w-4 h-4" />
-          <span>Cancel</span>
-        </button>
-      )}
     </div>
   );
 };
