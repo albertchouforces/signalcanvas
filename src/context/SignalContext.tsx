@@ -26,7 +26,7 @@ interface GridConfig {
   itemHeight: number;
   horizontalSpacing: number;
   verticalSpacing: number;
-  maxItemsPerRow: number;
+  maxItemsPerColumn: number; // Changed from maxItemsPerRow to maxItemsPerColumn
 }
 
 interface SignalContextType {
@@ -67,7 +67,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const playAreaRef = useRef<HTMLElement | null>(null);
   
   // Keep track of the current grid position for auto-placement
-  const gridPositionRef = useRef<{ row: number; col: number }>({ row: 0, col: 0 });
+  // Changed to track column and row positions for vertical filling
+  const gridPositionRef = useRef<{ col: number; row: number }>({ col: 0, row: 0 });
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
@@ -105,56 +106,60 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   }, [placedFlags]);
 
   // Update grid position based on existing flags to avoid overlaps
+  // Modified to track columns and rows for vertical filling
   const updateGridPositionFromExistingFlags = (flags: PlacedFlag[]) => {
     if (!flags.length) {
-      gridPositionRef.current = { row: 0, col: 0 };
+      gridPositionRef.current = { col: 0, row: 0 };
       return;
     }
 
     // Get grid configuration
     const gridConfig = getGridConfig();
     
-    // Find the maximum row and column based on existing flags' positions
-    let maxRow = 0;
+    // Find the maximum column and row based on existing flags' positions
     let maxCol = 0;
+    let maxRow = 0;
     
     flags.forEach(flag => {
-      const row = Math.floor((flag.top - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing));
       const col = Math.floor((flag.left - gridConfig.startX) / (gridConfig.itemWidth + gridConfig.horizontalSpacing));
+      const row = Math.floor((flag.top - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing));
       
-      if (row >= 0 && col >= 0) {
-        maxRow = Math.max(maxRow, row);
+      if (col >= 0 && row >= 0) {
         maxCol = Math.max(maxCol, col);
+        maxRow = Math.max(maxRow, row);
       }
     });
     
     // Set the next position for new flags
-    if (maxCol >= gridConfig.maxItemsPerRow - 1) {
-      gridPositionRef.current = { row: maxRow + 1, col: 0 };
+    // Updated to prioritize filling columns vertically
+    if (maxRow >= gridConfig.maxItemsPerColumn - 1) {
+      gridPositionRef.current = { col: maxCol + 1, row: 0 };
     } else {
-      gridPositionRef.current = { row: maxRow, col: maxCol + 1 };
+      gridPositionRef.current = { col: maxCol, row: maxRow + 1 };
     }
   };
 
   // Get grid configuration based on current play area size
+  // Modified to support vertical filling with maxItemsPerColumn
   const getGridConfig = useCallback((): GridConfig => {
     const playAreaNode = playAreaRef.current;
     if (!playAreaNode) {
       // Default values if play area is not available
       return {
         startX: 80, // Default starting X position with padding from left
-        startY: 120, // Default starting Y position with padding from top for title
+        startY: 80, // Reduced from 120px to 80px for less top padding
         itemWidth: 64, // Default flag width
         itemHeight: 64, // Default flag height
         horizontalSpacing: 20, // Default horizontal spacing between flags
         verticalSpacing: 20, // Default vertical spacing between flags
-        maxItemsPerRow: 3, // Default maximum items per row for mobile
+        maxItemsPerColumn: 5, // Default maximum items per column for mobile
       };
     }
 
     // Get play area dimensions
     const areaRect = playAreaNode.getBoundingClientRect();
     const areaWidth = areaRect.width;
+    const areaHeight = areaRect.height;
     
     // Flag dimensions
     const itemWidth = 64; // Flag width
@@ -164,24 +169,25 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const horizontalSpacing = 20;
     const verticalSpacing = 20;
     
-    // Calculate how many flags can fit in a row with proper spacing
-    const maxItemsPerRow = Math.max(1, Math.floor((areaWidth - 40) / (itemWidth + horizontalSpacing)));
+    // Calculate how many flags can fit in a column with proper spacing
+    const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - 100) / (itemHeight + verticalSpacing)));
     
-    // Start position - centered horizontally and with top padding
-    const startX = (areaWidth - (maxItemsPerRow * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
+    // Start position - centered horizontally and with reduced top padding
+    const startX = (areaWidth - (3 * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
     
     return {
       startX,
-      startY: 120, // Top padding for title
+      startY: 80, // Reduced top padding from 120px to 80px
       itemWidth,
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      maxItemsPerRow: isMobileDevice() ? Math.min(maxItemsPerRow, 3) : maxItemsPerRow, // Limit to 3 items per row on mobile
+      maxItemsPerColumn: isMobileDevice() ? Math.min(maxItemsPerColumn, 5) : maxItemsPerColumn, // Limit to 5 items per column on mobile
     };
   }, []);
 
   // Automatically place a flag on the canvas based on grid position
+  // Updated to fill vertically instead of horizontally
   const autoPlaceFlag = useCallback((flagType: string) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
     if (!flagToAdd) return;
@@ -190,7 +196,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const gridConfig = getGridConfig();
     
     // Calculate position based on current grid position
-    const { row, col } = gridPositionRef.current;
+    const { col, row } = gridPositionRef.current;
     
     const left = gridConfig.startX + col * (gridConfig.itemWidth + gridConfig.horizontalSpacing) + gridConfig.itemWidth / 2;
     const top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
@@ -206,13 +212,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Add flag to board
     setPlacedFlags(prev => [...prev, newFlag]);
     
-    // Update grid position for next flag
-    if (col + 1 >= gridConfig.maxItemsPerRow) {
-      // Move to next row if we've reached the end of the current row
-      gridPositionRef.current = { row: row + 1, col: 0 };
+    // Update grid position for next flag - fill vertically first
+    if (row + 1 >= gridConfig.maxItemsPerColumn) {
+      // Move to next column if we've reached the bottom of the current column
+      gridPositionRef.current = { col: col + 1, row: 0 };
     } else {
-      // Otherwise move to next column
-      gridPositionRef.current = { row, col: col + 1 };
+      // Otherwise move down in the same column
+      gridPositionRef.current = { col, row: row + 1 };
     }
     
     // Clear selected flag after placement
@@ -260,7 +266,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const clearBoard = useCallback(() => {
     setPlacedFlags([]);
     // Reset grid position when board is cleared
-    gridPositionRef.current = { row: 0, col: 0 };
+    gridPositionRef.current = { col: 0, row: 0 };
     setNotification({ message: 'Board cleared', type: 'success' });
   }, []);
 
