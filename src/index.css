@@ -47,6 +47,10 @@ html, body {
   -webkit-touch-callout: none;
 }
 
+.touch-action-none {
+  touch-action: none;
+}
+
 .no-drag-image {
   -webkit-user-drag: none;
   -khtml-user-drag: none;
@@ -61,4 +65,26 @@ html, body {
     max-height: 160px !important;
     transition: max-height 0.3s ease-in-out;
   }
+}
+
+/* Enhanced touch target for mobile */
+.touch-target-area {
+  padding: 10px;
+  margin: -10px;
+}
+
+/* Touch active state for mobile */
+.touch-active {
+  transform: scale(1.05) translate(-48%, -48%) !important;
+  transition: transform 0.1s ease-out !important;
+}
+
+/* Touch active classes for showing elements on touch */
+.touch-active\:opacity-100:active {
+  opacity: 1 !important;
+}
+
+/* Prevent text selection during drag operations */
+.dragging * {
+  user-select: none !important;
 }

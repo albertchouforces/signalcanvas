@@ -12,6 +12,22 @@ const PlayArea = () => {
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
   const [isHovering, setIsHovering] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Detect if this is a touch device
+  useEffect(() => {
+    const detectTouch = () => {
+      setIsTouchDevice(true);
+      // Remove the listener once we've detected touch
+      window.removeEventListener('touchstart', detectTouch);
+    };
+    
+    window.addEventListener('touchstart', detectTouch, { passive: true });
+    
+    return () => {
+      window.removeEventListener('touchstart', detectTouch);
+    };
+  }, []);
   
   // Load and measure the background image to set proper dimensions
   useEffect(() => {
@@ -178,6 +194,18 @@ const PlayArea = () => {
     }
   }), [addFlag, moveFlag]);
 
+  // Handle touch events for showing controls on mobile
+  const handleTouchStart = () => {
+    if (isTouchDevice) {
+      setIsHovering(true);
+      
+      // Hide controls after a delay
+      setTimeout(() => {
+        setIsHovering(false);
+      }, 3000);
+    }
+  };
+
   // Use this callback to update the context without direct .current assignments
   const playAreaRefCallback = (node: HTMLDivElement | null) => {
     if (node) {
@@ -193,6 +221,7 @@ const PlayArea = () => {
       ref={containerRef}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
+      onTouchStart={handleTouchStart}
     >
       {/* Canvas container with height exactly matching the background image */}
       <div 
@@ -234,7 +263,7 @@ const PlayArea = () => {
           ))}
         </div>
 
-        {/* Canvas control buttons - only visible on hover */}
+        {/* Canvas control buttons - visible on hover on desktop and briefly after touch on mobile */}
         <div 
           className={`canvas-control-buttons absolute bottom-4 right-4 flex space-x-2 transition-opacity duration-300 z-10 ${
             isHovering ? 'opacity-100' : 'opacity-0'
