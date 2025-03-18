@@ -1,6 +1,7 @@
 import { useDrag } from 'react-dnd';
-import { Flag } from '../context/SignalContext';
+import { Flag, useSignal } from '../context/SignalContext';
 import { useRef } from 'react';
+import { isMobileDevice } from '../utils/deviceDetection';
 
 interface InventoryFlagProps {
   flag: Flag;
@@ -9,6 +10,13 @@ interface InventoryFlagProps {
 const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   const flagRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const { selectFlag, selectedFlag } = useSignal();
+  
+  // Check if this flag is currently selected
+  const isSelected = selectedFlag?.id === flag.id;
+  
+  // Determine if we're on a mobile device
+  const isMobile = isMobileDevice();
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'FLAG',
@@ -37,9 +45,24 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
     }),
   }), [flag.type, flag.id]);
 
+  // Handle click/tap on inventory flag
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    
+    // For mobile: select the flag for auto-placement
+    if (isMobile) {
+      selectFlag(flag);
+    }
+  };
+
   // Prevent default touch behavior to avoid image selection dialog
   const handleTouchStart = (e: React.TouchEvent) => {
     e.preventDefault();
+    
+    // Don't start drag operation on mobile, just select the flag
+    if (isMobile) {
+      e.stopPropagation();
+    }
   };
 
   // Determine if this is a tackline flag
@@ -48,7 +71,11 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   // Use ref callback pattern to avoid direct .current assignment
   const flagRefCallback = (node: HTMLDivElement | null) => {
     flagRef.current = node;
-    drag(node);
+    
+    // Only enable drag on desktop
+    if (!isMobile) {
+      drag(node);
+    }
   };
 
   // Image ref callback to avoid direct .current assignment
@@ -59,13 +86,16 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   return (
     <div
       ref={flagRefCallback}
-      className={`flex flex-col items-center p-2 border rounded cursor-grab transition-all duration-200 ${
-        isDragging ? 'opacity-50' : 'opacity-100'
-      } hover:shadow-md hover:border-gray-300 hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98] no-select`}
+      className={`flex flex-col items-center p-2 border rounded transition-all duration-200 
+        ${isDragging ? 'opacity-50' : 'opacity-100'}
+        ${isSelected ? 'border-blue-500 bg-blue-50 shadow-md scale-[1.05]' : 'hover:shadow-md hover:border-gray-300 hover:bg-gray-50 hover:scale-[1.02] active:scale-[0.98]'}
+        ${isMobile ? 'cursor-pointer' : 'cursor-grab'} 
+        no-select`}
       style={{ 
-        zIndex: isDragging ? 100 : 10,
+        zIndex: isDragging ? 100 : (isSelected ? 50 : 10),
         pointerEvents: isDragging ? 'none' : 'auto',
       }}
+      onClick={handleTap}
       onTouchStart={handleTouchStart}
     >
       <img

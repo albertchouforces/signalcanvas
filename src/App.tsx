@@ -8,6 +8,7 @@ import Practice from './components/Practice';
 import { SignalProvider, useSignal } from './context/SignalContext';
 import Header from './components/Header';
 import Notification from './components/Notification';
+import DeviceInfo from './components/DeviceInfo';
 
 // Create a component to consume the context
 const AppContent = () => {
@@ -30,6 +31,7 @@ const AppContent = () => {
       {notification && (
         <Notification message={notification.message} type={notification.type} />
       )}
+      <DeviceInfo />
     </div>
   );
 };
