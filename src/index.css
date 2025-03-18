@@ -195,3 +195,60 @@ html, body {
 .touch-pulse {
   animation: pulseTouch 2s infinite;
 }
+
+/* Flag selection styles */
+.flag-selected {
+  box-shadow: 0 0 0 2px #3b82f6, 0 0 10px rgba(59, 130, 246, 0.5) !important;
+  z-index: 30 !important;
+}
+
+.inventory-flag-selected {
+  @apply ring-2 ring-blue-500 bg-blue-50 !important;
+}
+
+.flag-selected-pulse {
+  animation: selectedPulse 1.5s infinite;
+}
+
+@keyframes selectedPulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7), 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.9), 0 0 15px rgba(59, 130, 246, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.7), 0 0 5px rgba(59, 130, 246, 0.3);
+  }
+}
+
+/* Cancel selection button */
+.cancel-selection {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: 8px 16px;
+  background-color: #f44336;
+  color: white;
+  border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

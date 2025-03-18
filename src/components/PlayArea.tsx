@@ -2,38 +2,29 @@ import { useDrop } from 'react-dnd';
 import { useSignal } from '../context/SignalContext';
 import DraggableFlag from './DraggableFlag';
 import { useEffect, useRef, useState } from 'react';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, Trash2, CircleX } from 'lucide-react';
 
 const PlayArea = () => {
-  const { placedFlags, addFlag, moveFlag, updatePlayAreaRef, clearBoard, copyBoardToClipboard } = useSignal();
+  const { 
+    placedFlags, 
+    addFlag, 
+    moveFlag, 
+    updatePlayAreaRef, 
+    clearBoard, 
+    copyBoardToClipboard, 
+    selectedFlagId,
+    selectFlag,
+    isTouchDevice 
+  } = useSignal();
+  
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const [containerHeight, setContainerHeight] = useState<number>(0);
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
   const [isHovering, setIsHovering] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
-  // Detect if this is a touch device
-  useEffect(() => {
-    const detectTouch = () => {
-      setIsTouchDevice(true);
-      
-      // On touch devices, always show controls for better discoverability
-      setIsHovering(true);
-      
-      // Remove the listener once we've detected touch
-      window.removeEventListener('touchstart', detectTouch);
-    };
-    
-    window.addEventListener('touchstart', detectTouch, { passive: true });
-    
-    return () => {
-      window.removeEventListener('touchstart', detectTouch);
-    };
-  }, []);
-
   // Global event listeners to detect when dragging starts/ends
   useEffect(() => {
     // DnD library doesn't expose global drag state easily, so we add our own listeners
@@ -194,6 +185,20 @@ const PlayArea = () => {
     }
   }, [containerWidth, containerHeight, placedFlags, backgroundImageLoaded, naturalAspectRatio]);
 
+  // Clear flag selection when clicking on empty canvas area
+  const handleCanvasClick = (e: React.MouseEvent | React.TouchEvent) => {
+    // Only process if we have a selection and we're on a touch device
+    if (selectedFlagId && isTouchDevice) {
+      // Check if we clicked/tapped on a flag
+      const isOnFlag = (e.target as HTMLElement).closest('.draggable-flag');
+      
+      // If not clicking on a flag, clear the selection
+      if (!isOnFlag) {
+        selectFlag(null);
+      }
+    }
+  };
+  
   const [, drop] = useDrop(() => ({
     accept: 'FLAG',
     drop: (item: { 
@@ -252,6 +257,9 @@ const PlayArea = () => {
       // Don't prevent default here to allow scrolling
       setIsHovering(true);
       
+      // Handle canvas tap (to clear selection if needed)
+      handleCanvasClick(e);
+      
       // Hide controls after a delay, unless disabled for touch devices
       if (!isTouchDevice) {
         setTimeout(() => {
@@ -265,6 +273,7 @@ const PlayArea = () => {
   const handleMouseEvents = {
     onMouseEnter: () => setIsHovering(true),
     onMouseLeave: () => setIsHovering(false),
+    onClick: (e: React.MouseEvent) => handleCanvasClick(e),
   };
 
   // Prevent touch selection behaviors on touch devices only
@@ -280,6 +289,11 @@ const PlayArea = () => {
     e.preventDefault();
     e.stopPropagation();
     callback();
+  };
+
+  // Cancel flag selection
+  const cancelSelection = () => {
+    selectFlag(null);
   };
 
   // Use this callback to update the context without direct .current assignments
@@ -386,6 +400,17 @@ const PlayArea = () => {
           </button>
         </div>
       </div>
+      
+      {/* Cancel selection button - only shown on mobile when a flag is selected */}
+      {isTouchDevice && selectedFlagId && (
+        <button 
+          onClick={cancelSelection}
+          className="cancel-selection no-tap-highlight"
+        >
+          <CircleX className="w-4 h-4" />
+          <span>Cancel</span>
+        </button>
+      )}
     </div>
   );
 };

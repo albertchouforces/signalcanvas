@@ -9,27 +9,12 @@ interface DraggableFlagProps {
 }
 
 const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
-  const { removeFlag, getPlayAreaNode } = useSignal();
+  const { removeFlag, getPlayAreaNode, selectedFlagId, selectFlag, isTouchDevice } = useSignal();
   const flagRef = useRef<HTMLDivElement | null>(null);
   const [shouldFlip, setShouldFlip] = useState(false);
   const [isBeingDragged, setIsBeingDragged] = useState(false);
-  const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isButtonPressed, setIsButtonPressed] = useState(false);
-  
-  // Detect if this is a touch device
-  useEffect(() => {
-    const detectTouch = () => {
-      setIsTouchDevice(true);
-      // Once detected, remove the listener
-      window.removeEventListener('touchstart', detectTouch);
-    };
-    
-    window.addEventListener('touchstart', detectTouch, { passive: true });
-    
-    return () => {
-      window.removeEventListener('touchstart', detectTouch);
-    };
-  }, []);
+  const isSelected = selectedFlagId === flag.id;
   
   // Check if the flag should be flipped based on its position
   useEffect(() => {
@@ -49,6 +34,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'FLAG',
     item: (monitor) => {
+      // Only allow dragging if not on touch device, or if selected on touch device
+      if (isTouchDevice && !isSelected) {
+        return null;
+      }
+      
       // Get the flag element's bounding rectangle
       const flagRect = flagRef.current?.getBoundingClientRect();
       
@@ -79,12 +69,23 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
       isDragging: !!monitor.isDragging(),
     }),
     // Make sure the drag source can be dragged by mouse and touch
-    canDrag: () => !isButtonPressed, // Don't drag if delete button is being pressed
+    canDrag: () => {
+      // Don't drag if delete button is being pressed
+      if (isButtonPressed) return false;
+      
+      // On touch devices, only allow dragging if the flag is selected
+      if (isTouchDevice) {
+        return isSelected;
+      }
+      
+      // On desktop, always allow dragging
+      return true;
+    },
     // Options to ensure drag works
     options: {
       dropEffect: 'move',
     }
-  }), [flag.id, flag.type, isDraggingOnBoard, isButtonPressed]);
+  }), [flag.id, flag.type, isDraggingOnBoard, isButtonPressed, isSelected, isTouchDevice]);
 
   const handleRemove = (e: React.MouseEvent | React.TouchEvent) => {
     // Ensure event doesn't propagate to parent (which would trigger drag)
@@ -115,6 +116,29 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     setIsButtonPressed(false);
   };
 
+  // Handle flag selection on touch devices
+  const handleFlagSelect = (e: React.TouchEvent | React.MouseEvent) => {
+    // Only handle selection on touch devices
+    if (!isTouchDevice) return;
+    
+    // If touching the delete button, don't handle here
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Toggle selection
+    if (isSelected) {
+      // If already selected, keep the selection (dragging will be handled by the drag system)
+      return;
+    } else {
+      // If not selected, select this flag
+      selectFlag(flag.id);
+    }
+  };
+
   // Handle touch events for the flag
   const handleTouchStart = (e: React.TouchEvent) => {
     // If touching the delete button, don't handle here
@@ -123,9 +147,8 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     }
     
     if (isTouchDevice) {
-      // Only prevent default for touch devices
-      e.preventDefault();
-      e.stopPropagation();
+      // Select the flag on touch
+      handleFlagSelect(e);
       
       // Add a class to enable mobile-friendly styling during touch
       if (flagRef.current) {
@@ -172,6 +195,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
       return;
     }
     
+    // For mouse users, this acts as a selection too
+    if (isTouchDevice) {
+      handleFlagSelect(e);
+    }
+    
     // Don't prevent default mouse behavior for cursor-based dragging
     // This ensures regular drag works
     e.stopPropagation();
@@ -189,14 +217,15 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   return (
     <div
       ref={flagRefCallback}
-      className={`absolute cursor-grab draggable-flag
+      className={`absolute ${isTouchDevice ? 'draggable-mobile' : 'cursor-grab'} draggable-flag
                  ${isDragging ? 'opacity-50' : 'opacity-100'} no-select 
                  ${isBeingDragged ? 'z-50' : ''}
-                 ${isTouchDevice ? 'draggable-mobile touch-action-none' : ''}`}
+                 ${isSelected ? 'flag-selected flag-selected-pulse' : ''}
+                 ${isTouchDevice ? 'touch-action-none' : ''}`}
       style={{
         left: `${flag.left}px`,
         top: `${flag.top}px`,
-        zIndex: isDragging ? 100 : 10,
+        zIndex: isDragging ? 100 : (isSelected ? 30 : 10),
         transform: 'translate(-50%, -50%)', // Center the flag at the position
         pointerEvents: isDragging ? 'none' : 'auto',
         // Add a subtle touch feedback shadow on mobile
