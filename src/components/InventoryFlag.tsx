@@ -1,6 +1,6 @@
 import { useDrag } from 'react-dnd';
 import { Flag } from '../context/SignalContext';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 interface InventoryFlagProps {
   flag: Flag;
@@ -9,6 +9,22 @@ interface InventoryFlagProps {
 const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   const flagRef = useRef<HTMLDivElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Detect if this is a touch device
+  useEffect(() => {
+    const detectTouch = () => {
+      setIsTouchDevice(true);
+      // Remove the listener once we've detected touch
+      window.removeEventListener('touchstart', detectTouch);
+    };
+    
+    window.addEventListener('touchstart', detectTouch, { passive: true });
+    
+    return () => {
+      window.removeEventListener('touchstart', detectTouch);
+    };
+  }, []);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: 'FLAG',
@@ -35,11 +51,25 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    // Make sure the drag source can be dragged by mouse
+    canDrag: () => true,
+    // Options to ensure drag works
+    options: {
+      dropEffect: 'move',
+    }
   }), [flag.type, flag.id]);
 
   // Prevent default touch behavior to avoid image selection dialog
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
+    if (isTouchDevice) {
+      e.preventDefault();
+    }
+  };
+
+  // Handle mouse-specific events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Don't prevent default mouse behavior for cursor-based dragging
+    e.stopPropagation();
   };
 
   // Determine if this is a tackline flag
@@ -67,12 +97,13 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
         pointerEvents: isDragging ? 'none' : 'auto',
       }}
       onTouchStart={handleTouchStart}
+      onMouseDown={handleMouseDown}
     >
       <img
         ref={imageRefCallback}
         src={flag.image}
         alt={flag.name}
-        className="h-16 w-auto object-contain mb-2 no-select no-touch-action no-drag-image"
+        className={`h-16 w-auto object-contain mb-2 ${isTouchDevice ? 'no-select no-touch-action no-drag-image' : ''}`}
         style={isTackline ? {
           maxWidth: '64px',  // Match width in inventory
           height: '48px',    // Slightly smaller height

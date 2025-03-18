@@ -13,6 +13,22 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   const flagRef = useRef<HTMLDivElement | null>(null);
   const [shouldFlip, setShouldFlip] = useState(false);
   const [isBeingDragged, setIsBeingDragged] = useState(false);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+  
+  // Detect if this is a touch device
+  useEffect(() => {
+    const detectTouch = () => {
+      setIsTouchDevice(true);
+      // Once detected, remove the listener
+      window.removeEventListener('touchstart', detectTouch);
+    };
+    
+    window.addEventListener('touchstart', detectTouch, { passive: true });
+    
+    return () => {
+      window.removeEventListener('touchstart', detectTouch);
+    };
+  }, []);
   
   // Check if the flag should be flipped based on its position
   useEffect(() => {
@@ -61,6 +77,12 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
+    // Make sure the drag source can be dragged by mouse
+    canDrag: () => true,
+    // Options to ensure drag works
+    options: {
+      dropEffect: 'move',
+    }
   }), [flag.id, flag.type, isDraggingOnBoard]);
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -68,30 +90,46 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     removeFlag(flag.id);
   };
 
-  // Prevent default touch behavior to avoid image selection dialog and other mobile behaviors
+  // Handle touch events only on touch devices
   const handleTouchStart = (e: React.TouchEvent) => {
-    // This prevents the default touch behaviors like long-press context menus
-    e.preventDefault();
-    
-    // Add a class to enable mobile-friendly styling during touch
-    if (flagRef.current) {
-      flagRef.current.classList.add('touch-active');
+    if (isTouchDevice) {
+      // Only prevent default for touch devices
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Add a class to enable mobile-friendly styling during touch
+      if (flagRef.current) {
+        flagRef.current.classList.add('touch-active');
+      }
     }
   }; 
   
   // Handle touch end to clean up any touch-specific styling
-  const handleTouchEnd = () => {
-    if (flagRef.current) {
-      flagRef.current.classList.remove('touch-active');
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (isTouchDevice) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (flagRef.current) {
+        flagRef.current.classList.remove('touch-active');
+      }
     }
   };
   
   // Handle touch move to prevent page scrolling while dragging
   const handleTouchMove = (e: React.TouchEvent) => {
-    // Prevent scrolling while dragging
-    if (isBeingDragged) {
+    // Only prevent default if we're actively dragging on a touch device
+    if (isTouchDevice && isBeingDragged) {
       e.preventDefault();
+      e.stopPropagation();
     }
+  };
+
+  // Handle mouse-specific events
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // Don't prevent default mouse behavior for cursor-based dragging
+    // This ensures regular drag works
+    e.stopPropagation();
   };
 
   // Determine if this is a tackline flag
@@ -106,8 +144,10 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   return (
     <div
       ref={flagRefCallback}
-      className={`absolute cursor-grab ${isDragging ? 'opacity-50' : 'opacity-100'} no-select
-                 ${isBeingDragged ? 'z-50' : ''} touch-action-none`}
+      className={`absolute cursor-grab draggable-flag
+                 ${isDragging ? 'opacity-50' : 'opacity-100'} no-select 
+                 ${isBeingDragged ? 'z-50' : ''}
+                 ${isTouchDevice ? 'draggable-mobile touch-action-none' : ''}`}
       style={{
         left: `${flag.left}px`,
         top: `${flag.top}px`,
@@ -121,14 +161,15 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
+      onMouseDown={handleMouseDown}
       onContextMenu={(e) => e.preventDefault()} // Prevent context menu on long press
     >
-      <div className="relative group">
-        <div className="touch-target-area">
+      <div className="relative group no-mobile-selection">
+        <div className={`${isTouchDevice ? 'touch-target-area' : ''} no-mobile-selection`}>
           <img
             src={flag.image}
             alt={flag.name}
-            className="h-16 w-auto object-contain no-select no-touch-action no-drag-image"
+            className={`h-16 w-auto object-contain ${isTouchDevice ? 'no-select no-touch-action no-drag-image no-context-menu' : ''}`}
             style={{
               ...(isTackline ? {
                 maxWidth: '64px',  // Match width of other flags
@@ -143,13 +184,15 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
               minHeight: isTackline ? '48px' : '64px', // Ensure minimum height
             }}
             draggable={false}
+            onDragStart={(e) => e.preventDefault()}
+            onTouchStart={(e) => isTouchDevice && e.stopPropagation()}
           />
         </div>
         <button
           onClick={handleRemove}
           className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5
                     opacity-0 group-hover:opacity-100 transition-opacity
-                    touch-active:opacity-100" // Show on touch devices when active
+                    touch-active:opacity-100 no-tap-highlight" // Show on touch devices when active
           style={{
             // Larger touch target for mobile
             minWidth: '24px',

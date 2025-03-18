@@ -88,3 +88,55 @@ html, body {
 .dragging * {
   user-select: none !important;
 }
+
+/* Apply to canvas background to prevent selection on mobile */
+.no-mobile-selection {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent highlight on tap for buttons and interactive elements */
+.no-tap-highlight {
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+
+/* Disable image long-press behavior */
+.no-context-menu {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Enhanced touch styles for draggable items specifically */
+.draggable-mobile {
+  touch-action: none; /* Disable scrolling when touching this element */
+  user-select: none;  /* Prevent text selection */
+  -webkit-user-drag: none; /* Prevent default dragging behavior */
+  -webkit-touch-callout: none; /* Disable iOS callout on long-press */
+  -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+}
+
+/* Apply when dragging is active to prevent any highlighting */
+.drag-in-progress {
+  pointer-events: auto !important;
+}
+
+.drag-in-progress * {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+/* Styles for cursor-based dragging */
+.cursor-grab {
+  cursor: grab !important;
+}
+
+.cursor-grab:active {
+  cursor: grabbing !important;
+}
