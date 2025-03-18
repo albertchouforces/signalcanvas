@@ -14,7 +14,6 @@ const PlayArea = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [lastTouchTime, setLastTouchTime] = useState(0);
   
   // Detect if this is a touch device
   useEffect(() => {
@@ -244,9 +243,6 @@ const PlayArea = () => {
 
   // Handle touch events for showing controls on mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    const now = Date.now();
-    setLastTouchTime(now);
-    
     // Detect touch on the background vs. on a flag
     const target = e.target as HTMLElement;
     const isTouchingFlag = !!target.closest('.draggable-flag');
@@ -259,10 +255,7 @@ const PlayArea = () => {
       // Hide controls after a delay, unless disabled for touch devices
       if (!isTouchDevice) {
         setTimeout(() => {
-          const elapsed = Date.now() - now;
-          if (elapsed > 2900) { // Only hide if no new touch has happened
-            setIsHovering(false);
-          }
+          setIsHovering(false);
         }, 3000);
       }
     }
