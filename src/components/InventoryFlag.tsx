@@ -1,6 +1,6 @@
 import { useDrag } from 'react-dnd';
 import { Flag, useSignal } from '../context/SignalContext';
-import { useRef, useState, useEffect } from 'react';
+import { useRef } from 'react';
 
 interface InventoryFlagProps {
   flag: Flag;
