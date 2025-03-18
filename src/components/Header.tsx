@@ -5,21 +5,6 @@ const Header = () => {
   const [showTooltip, setShowTooltip] = useState(false);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const iconRef = useRef<HTMLButtonElement>(null);
-  const [isMobile, setIsMobile] = useState(false);
-
-  // Check if we're on mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
-    };
-    
-    // Check initially
-    checkMobile();
-    
-    // Listen for window resize
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Close tooltip when clicking outside
   useEffect(() => {
@@ -65,11 +50,8 @@ const Header = () => {
             {showTooltip && (
               <div 
                 ref={tooltipRef}
-                className={`absolute p-3 bg-yellow-50 border border-yellow-200 
-                          rounded-md shadow-md z-50 text-sm text-gray-700 animate-fade-in
-                          ${isMobile 
-                            ? 'left-1/2 -translate-x-1/2 top-7 w-[250px] max-w-[90vw]' 
-                            : 'left-7 top-0 w-72'}`}
+                className="absolute left-7 top-0 w-72 p-3 bg-yellow-50 border border-yellow-200 
+                          rounded-md shadow-md z-50 text-sm text-gray-700 animate-fade-in"
                 style={{
                   animationDuration: '0.2s',
                 }}
@@ -85,18 +67,11 @@ const Header = () => {
                     joshua.hawthorne@ecn.forces.gc.ca
                   </a>
                 </p>
-                
-                {/* Different arrow position based on device */}
-                {isMobile ? (
-                  <div className="absolute left-1/2 -top-2 -translate-x-1/2">
-                    <div className="border-8 border-transparent border-b-yellow-50"></div>
-                  </div>
-                ) : (
-                  <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-90">
-                    <div className="border-4 border-transparent border-r-yellow-50 
-                                 filter drop-shadow-sm"></div>
-                  </div>
-                )}
+                {/* Add a little arrow/triangle pointing to the icon */}
+                <div className="absolute left-0 top-1/2 transform -translate-x-1/2 -translate-y-1/2 rotate-90">
+                  <div className="border-4 border-transparent border-r-yellow-50 
+                               filter drop-shadow-sm"></div>
+                </div>
               </div>
             )}
           </div>
