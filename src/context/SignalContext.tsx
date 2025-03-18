@@ -143,10 +143,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   // Modified to support vertical filling with maxItemsPerColumn
   const getGridConfig = useCallback((): GridConfig => {
     const playAreaNode = playAreaRef.current;
+    const isMobile = isMobileDevice();
+    
     if (!playAreaNode) {
       // Default values if play area is not available
       return {
-        startX: 80, // Default starting X position with padding from left
+        startX: isMobile ? 40 : 80, // Reduced indentation for mobile
         startY: 80, // Reduced from 120px to 80px for less top padding
         itemWidth: 64, // Default flag width
         itemHeight: 64, // Default flag height
@@ -172,8 +174,15 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Calculate how many flags can fit in a column with proper spacing
     const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - 100) / (itemHeight + verticalSpacing)));
     
-    // Start position - centered horizontally and with reduced top padding
-    const startX = (areaWidth - (3 * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
+    // Start position - adjusted for mobile with reduced left padding
+    // For mobile, use a fixed smaller indentation from the left
+    let startX;
+    if (isMobile) {
+      startX = 40; // Reduced left indentation for mobile
+    } else {
+      // For desktop, center the grid as before
+      startX = (areaWidth - (3 * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
+    }
     
     return {
       startX,
@@ -182,12 +191,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      maxItemsPerColumn: isMobileDevice() ? Math.min(maxItemsPerColumn, 5) : maxItemsPerColumn, // Limit to 5 items per column on mobile
+      maxItemsPerColumn: isMobile ? Math.min(maxItemsPerColumn, 5) : maxItemsPerColumn, // Limit to 5 items per column on mobile
     };
   }, []);
 
   // Automatically place a flag on the canvas based on grid position
-  // Updated to fill vertically instead of horizontally
+  // Updated to fill vertically instead of horizontally and ensure consistent alignment
   const autoPlaceFlag = useCallback((flagType: string) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
     if (!flagToAdd) return;
@@ -198,6 +207,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Calculate position based on current grid position
     const { col, row } = gridPositionRef.current;
     
+    // Calculate positions consistently to maintain alignment across all columns
+    // Adding itemWidth/2 centers the flag at the grid position
     const left = gridConfig.startX + col * (gridConfig.itemWidth + gridConfig.horizontalSpacing) + gridConfig.itemWidth / 2;
     const top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
     
