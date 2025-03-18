@@ -101,8 +101,9 @@ html, body {
 
 /* Prevent highlight on tap for buttons and interactive elements */
 .no-tap-highlight {
-  -webkit-tap-highlight-color: transparent;
-  outline: none;
+  -webkit-tap-highlight-color: transparent !important;
+  outline: none !important;
+  touch-action: manipulation;
 }
 
 /* Disable image long-press behavior */
@@ -114,11 +115,11 @@ html, body {
 
 /* Enhanced touch styles for draggable items specifically */
 .draggable-mobile {
-  touch-action: none; /* Disable scrolling when touching this element */
-  user-select: none;  /* Prevent text selection */
-  -webkit-user-drag: none; /* Prevent default dragging behavior */
-  -webkit-touch-callout: none; /* Disable iOS callout on long-press */
-  -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+  touch-action: none !important; /* Disable scrolling when touching this element */
+  user-select: none !important;  /* Prevent text selection */
+  -webkit-user-drag: none !important; /* Prevent default dragging behavior */
+  -webkit-touch-callout: none !important; /* Disable iOS callout on long-press */
+  -webkit-tap-highlight-color: transparent !important; /* Remove tap highlight */
 }
 
 /* Apply when dragging is active to prevent any highlighting */
@@ -139,4 +140,58 @@ html, body {
 
 .cursor-grab:active {
   cursor: grabbing !important;
+}
+
+/* Mobile-specific button styling */
+@media (max-width: 768px) {
+  button.mobile-friendly {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    padding: 10px !important;
+  }
+  
+  .mobile-touch-target {
+    position: relative;
+  }
+  
+  .mobile-touch-target::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    z-index: -1;
+  }
+}
+
+/* Fix for mobile dragging interference from browser behaviors */
+* {
+  touch-action: manipulation;
+}
+
+.draggable-flag, .draggable-flag * {
+  -webkit-tap-highlight-color: transparent !important;
+  tap-highlight-color: transparent !important;
+}
+
+/* Add pulse animation to show interactivity on mobile */
+@keyframes pulseTouch {
+  0% {
+    transform: scale(1) translate(-50%, -50%);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.3);
+  }
+  70% {
+    transform: scale(1.02) translate(-50%, -50%);
+    box-shadow: 0 0 0 6px rgba(59, 130, 246, 0);
+  }
+  100% {
+    transform: scale(1) translate(-50%, -50%);
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+/* Apply pulse animation to touch target elements */
+.touch-pulse {
+  animation: pulseTouch 2s infinite;
 }

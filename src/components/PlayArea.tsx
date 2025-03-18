@@ -14,11 +14,16 @@ const PlayArea = () => {
   const [isHovering, setIsHovering] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [lastTouchTime, setLastTouchTime] = useState(0);
   
   // Detect if this is a touch device
   useEffect(() => {
     const detectTouch = () => {
       setIsTouchDevice(true);
+      
+      // On touch devices, always show controls for better discoverability
+      setIsHovering(true);
+      
       // Remove the listener once we've detected touch
       window.removeEventListener('touchstart', detectTouch);
     };
@@ -239,16 +244,27 @@ const PlayArea = () => {
 
   // Handle touch events for showing controls on mobile
   const handleTouchStart = (e: React.TouchEvent) => {
-    // Only prevent default for touch devices and only when not directly on a flag
-    if (isTouchDevice && !(e.target as HTMLElement).closest('.draggable-flag')) {
-      // Prevent default to avoid selecting the background
-      e.stopPropagation();
+    const now = Date.now();
+    setLastTouchTime(now);
+    
+    // Detect touch on the background vs. on a flag
+    const target = e.target as HTMLElement;
+    const isTouchingFlag = !!target.closest('.draggable-flag');
+    
+    // If touching the background (not a flag), show controls
+    if (isTouchDevice && !isTouchingFlag) {
+      // Don't prevent default here to allow scrolling
       setIsHovering(true);
       
-      // Hide controls after a delay
-      setTimeout(() => {
-        setIsHovering(false);
-      }, 3000);
+      // Hide controls after a delay, unless disabled for touch devices
+      if (!isTouchDevice) {
+        setTimeout(() => {
+          const elapsed = Date.now() - now;
+          if (elapsed > 2900) { // Only hide if no new touch has happened
+            setIsHovering(false);
+          }
+        }, 3000);
+      }
     }
   };
 
@@ -264,6 +280,13 @@ const PlayArea = () => {
       e.preventDefault();
       e.stopPropagation();
     }
+  };
+
+  // Enhanced button click handler for mobile
+  const handleButtonClick = (callback: () => void) => (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    callback();
   };
 
   // Use this callback to update the context without direct .current assignments
@@ -330,30 +353,40 @@ const PlayArea = () => {
           ))}
         </div>
 
-        {/* Canvas control buttons - visible on hover on desktop and briefly after touch on mobile */}
+        {/* Canvas control buttons - visible on hover on desktop and always visible on mobile */}
         <div 
           className={`canvas-control-buttons absolute bottom-4 right-4 flex space-x-2 transition-opacity duration-300 z-10 ${
-            isHovering ? 'opacity-100' : 'opacity-0'
+            isHovering || isTouchDevice ? 'opacity-100' : 'opacity-0'
           } no-mobile-selection`}
         >
           <button
-            onClick={copyBoardToClipboard}
+            onClick={handleButtonClick(copyBoardToClipboard)}
             className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 
                     active:bg-blue-800 transition-all duration-200 shadow-sm hover:shadow
                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50
                     hover:scale-[1.02] active:scale-[0.98] no-tap-highlight"
             aria-label="Copy board to clipboard"
+            style={{
+              // Larger touch target for mobile
+              minHeight: isTouchDevice ? '44px' : 'auto',
+              touchAction: 'manipulation',
+            }}
           >
             <Camera className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
             <span className="text-sm font-medium">Copy</span>
           </button>
           <button
-            onClick={clearBoard}
+            onClick={handleButtonClick(clearBoard)}
             className="flex items-center px-3 py-2 bg-white text-red-600 border border-red-200 rounded-md 
                     hover:bg-red-50 active:bg-red-100 transition-all duration-200 shadow-sm hover:shadow
                     focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50
                     hover:scale-[1.02] active:scale-[0.98] no-tap-highlight"
             aria-label="Clear all flags from board"
+            style={{
+              // Larger touch target for mobile
+              minHeight: isTouchDevice ? '44px' : 'auto',
+              touchAction: 'manipulation',
+            }}
           >
             <Trash2 className="w-4 h-4 mr-1.5 stroke-[2.5px]" />
             <span className="text-sm font-medium">Clear</span>

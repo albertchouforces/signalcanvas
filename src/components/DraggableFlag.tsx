@@ -14,6 +14,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   const [shouldFlip, setShouldFlip] = useState(false);
   const [isBeingDragged, setIsBeingDragged] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const [isButtonPressed, setIsButtonPressed] = useState(false);
   
   // Detect if this is a touch device
   useEffect(() => {
@@ -77,21 +78,50 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
-    // Make sure the drag source can be dragged by mouse
-    canDrag: () => true,
+    // Make sure the drag source can be dragged by mouse and touch
+    canDrag: () => !isButtonPressed, // Don't drag if delete button is being pressed
     // Options to ensure drag works
     options: {
       dropEffect: 'move',
     }
-  }), [flag.id, flag.type, isDraggingOnBoard]);
+  }), [flag.id, flag.type, isDraggingOnBoard, isButtonPressed]);
 
-  const handleRemove = (e: React.MouseEvent) => {
+  const handleRemove = (e: React.MouseEvent | React.TouchEvent) => {
+    // Ensure event doesn't propagate to parent (which would trigger drag)
     e.stopPropagation();
+    e.preventDefault();
+    
+    // Remove the flag
     removeFlag(flag.id);
+    
+    // Reset button pressed state
+    setIsButtonPressed(false);
   };
 
-  // Handle touch events only on touch devices
+  // Handle touch events specifically for the delete button
+  const handleButtonTouchStart = (e: React.TouchEvent) => {
+    // Mark that we're interacting with the button, not dragging
+    setIsButtonPressed(true);
+    
+    // Stop propagation to prevent dragging
+    e.stopPropagation();
+  };
+  
+  const handleButtonTouchEnd = (e: React.TouchEvent) => {
+    // Handle the touch end as a click
+    handleRemove(e);
+    
+    // Reset button state
+    setIsButtonPressed(false);
+  };
+
+  // Handle touch events for the flag
   const handleTouchStart = (e: React.TouchEvent) => {
+    // If touching the delete button, don't handle here
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
     if (isTouchDevice) {
       // Only prevent default for touch devices
       e.preventDefault();
@@ -106,6 +136,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   
   // Handle touch end to clean up any touch-specific styling
   const handleTouchEnd = (e: React.TouchEvent) => {
+    // If touching the delete button, don't handle here
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
     if (isTouchDevice) {
       e.preventDefault();
       e.stopPropagation();
@@ -118,6 +153,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   
   // Handle touch move to prevent page scrolling while dragging
   const handleTouchMove = (e: React.TouchEvent) => {
+    // If touching the delete button, don't handle here
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
     // Only prevent default if we're actively dragging on a touch device
     if (isTouchDevice && isBeingDragged) {
       e.preventDefault();
@@ -127,6 +167,11 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
 
   // Handle mouse-specific events
   const handleMouseDown = (e: React.MouseEvent) => {
+    // If clicking the delete button, don't handle here
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    
     // Don't prevent default mouse behavior for cursor-based dragging
     // This ensures regular drag works
     e.stopPropagation();
@@ -189,16 +234,20 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
           />
         </div>
         <button
+          onMouseDown={(e) => e.stopPropagation()} // Prevent drag when clicking delete button
           onClick={handleRemove}
-          className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5
-                    opacity-0 group-hover:opacity-100 transition-opacity
-                    touch-active:opacity-100 no-tap-highlight" // Show on touch devices when active
+          onTouchStart={handleButtonTouchStart}
+          onTouchEnd={handleButtonTouchEnd}
+          className={`absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1.5
+                     ${isTouchDevice ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} 
+                     transition-opacity duration-200 no-tap-highlight`}
           style={{
             // Larger touch target for mobile
-            minWidth: '24px',
-            minHeight: '24px',
+            minWidth: isTouchDevice ? '30px' : '24px',
+            minHeight: isTouchDevice ? '30px' : '24px',
             // Ensure the button is always on top
             zIndex: 20,
+            touchAction: 'manipulation',
           }}
         >
           <X className="h-3.5 w-3.5" />
