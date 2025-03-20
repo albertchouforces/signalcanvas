@@ -415,8 +415,9 @@ const Practice = () => {
             <button
               onClick={toggleMode}
               className={`flex items-center px-3 py-1.5 text-sm font-medium rounded transition-all duration-200
+                hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50
                 ${mode === 'encode' 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-blue-600 text-white shadow-sm' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-600/50'}`}
             >
               <Code className="w-3.5 h-3.5 mr-1.5 stroke-[2.5px]" />
@@ -425,8 +426,9 @@ const Practice = () => {
             <button
               onClick={toggleMode}
               className={`flex items-center px-3 py-1.5 text-sm font-medium rounded transition-all duration-200
+                hover:scale-[1.02] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50
                 ${mode === 'decode' 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-blue-600 text-white shadow-sm' 
                   : 'text-gray-300 hover:text-white hover:bg-gray-600/50'}`}
             >
               <MessageSquare className="w-3.5 h-3.5 mr-1.5 stroke-[2.5px]" />
