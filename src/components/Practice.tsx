@@ -318,7 +318,6 @@ const Practice = () => {
   const [questions, setQuestions] = useState(practiceQuestions);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const [isAnswerExpanded, setIsAnswerExpanded] = useState(false);
   const [mode, setMode] = useState<'encode' | 'decode'>('encode');
 
@@ -345,14 +344,12 @@ const Practice = () => {
 
   const handleNext = () => {
     setShowAnswer(false);
-    setShowHint(false);
     setIsAnswerExpanded(false);
     setCurrentIndex((prev) => (prev + 1) % questions.length);
   };
 
   const handlePrevious = () => {
     setShowAnswer(false);
-    setShowHint(false);
     setIsAnswerExpanded(false);
     setCurrentIndex((prev) => (prev - 1 + questions.length) % questions.length);
   };
@@ -360,19 +357,12 @@ const Practice = () => {
   const toggleMode = () => {
     // Reset states when toggling modes
     setShowAnswer(false);
-    setShowHint(false);
     setIsAnswerExpanded(false);
     setMode(mode === 'encode' ? 'decode' : 'encode');
   };
 
   const toggleAnswer = () => {
-    if (mode === 'encode') {
-      setShowAnswer(!showAnswer);
-    } else {
-      // In decode mode, immediately show both answer and hint in one step
-      setShowAnswer(true);
-      setShowHint(true);
-    }
+    setShowAnswer(!showAnswer);
   };
 
   const expandAnswer = () => {
