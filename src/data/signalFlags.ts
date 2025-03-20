@@ -4,7 +4,7 @@ export const signalFlags = [
     type: 'alfa',
     name: 'Alfa',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Alfa.svg',
+    image: 'images/signalflags/Alfa.svg',
     keywords: []
   },
   {
@@ -12,7 +12,7 @@ export const signalFlags = [
     type: 'bravo',
     name: 'Bravo',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Bravo.svg',
+    image: 'images/signalflags/Bravo.svg',
     keywords: []
   },
   {
@@ -20,7 +20,7 @@ export const signalFlags = [
     type: 'charlie',
     name: 'Charlie',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Charlie.svg',
+    image: 'images/signalflags/Charlie.svg',
     keywords: []
   },
   {
@@ -28,7 +28,7 @@ export const signalFlags = [
     type: 'delta',
     name: 'Delta',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Delta.svg',
+    image: 'images/signalflags/Delta.svg',
     keywords: []
   },
   {
@@ -36,7 +36,7 @@ export const signalFlags = [
     type: 'echo',
     name: 'Echo',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Echo.svg',
+    image: 'images/signalflags/Echo.svg',
     keywords: []
   },
   {
@@ -44,7 +44,7 @@ export const signalFlags = [
     type: 'foxtrot',
     name: 'Foxtrot',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Foxtrot.svg',
+    image: 'images/signalflags/Foxtrot.svg',
     keywords: []
   },
   {
@@ -52,7 +52,7 @@ export const signalFlags = [
     type: 'golf',
     name: 'Golf',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Golf.svg',
+    image: 'images/signalflags/Golf.svg',
     keywords: []
   },
   {
@@ -60,7 +60,7 @@ export const signalFlags = [
     type: 'hotel',
     name: 'Hotel',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Hotel.svg',
+    image: 'images/signalflags/Hotel.svg',
     keywords: []
   },
   {
@@ -68,7 +68,7 @@ export const signalFlags = [
     type: 'india',
     name: 'India',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/India.svg',
+    image: 'images/signalflags/India.svg',
     keywords: []
   },
   {
@@ -76,7 +76,7 @@ export const signalFlags = [
     type: 'juliett',
     name: 'Juliett',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Juliett.svg',
+    image: 'images/signalflags/Juliett.svg',
     keywords: []
   },
   {
@@ -84,7 +84,7 @@ export const signalFlags = [
     type: 'kilo',
     name: 'Kilo',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Kilo.svg',
+    image: 'images/signalflags/Kilo.svg',
     keywords: []
   },
   {
@@ -92,7 +92,7 @@ export const signalFlags = [
     type: 'lima',
     name: 'Lima',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Lima.svg',
+    image: 'images/signalflags/Lima.svg',
     keywords: []
   },
   {
@@ -100,7 +100,7 @@ export const signalFlags = [
     type: 'mike',
     name: 'Mike',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Mike.svg',
+    image: 'images/signalflags/Mike.svg',
     keywords: []
   },
   {
@@ -108,7 +108,7 @@ export const signalFlags = [
     type: 'november',
     name: 'November',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/November.svg',
+    image: 'images/signalflags/November.svg',
     keywords: []
   },
   {
@@ -116,7 +116,7 @@ export const signalFlags = [
     type: 'oscar',
     name: 'Oscar',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Oscar.svg',
+    image: 'images/signalflags/Oscar.svg',
     keywords: []
   },
   {
@@ -124,7 +124,7 @@ export const signalFlags = [
     type: 'papa',
     name: 'Papa',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Papa.svg',
+    image: 'images/signalflags/Papa.svg',
     keywords: []
   },
   {
@@ -132,7 +132,7 @@ export const signalFlags = [
     type: 'quebec',
     name: 'Quebec',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Quebec.svg',
+    image: 'images/signalflags/Quebec.svg',
     keywords: []
   },
   {
@@ -140,7 +140,7 @@ export const signalFlags = [
     type: 'romeo',
     name: 'Romeo',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Romeo.svg',
+    image: 'images/signalflags/Romeo.svg',
     keywords: []
   },
   {
@@ -148,7 +148,7 @@ export const signalFlags = [
     type: 'sierra',
     name: 'Sierra',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Sierra.svg',
+    image: 'images/signalflags/Sierra.svg',
     keywords: []
   },
   {
@@ -156,7 +156,7 @@ export const signalFlags = [
     type: 'tango',
     name: 'Tango',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Tango.svg',
+    image: 'images/signalflags/Tango.svg',
     keywords: []
   },
   {
@@ -164,7 +164,7 @@ export const signalFlags = [
     type: 'uniform',
     name: 'Uniform',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Uniform.svg',
+    image: 'images/signalflags/Uniform.svg',
     keywords: []
   },
   {
@@ -172,7 +172,7 @@ export const signalFlags = [
     type: 'victor',
     name: 'Victor',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Victor.svg',
+    image: 'images/signalflags/Victor.svg',
     keywords: []
   },
   {
@@ -180,7 +180,7 @@ export const signalFlags = [
     type: 'whiskey',
     name: 'Whiskey',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Whiskey.svg',
+    image: 'images/signalflags/Whiskey.svg',
     keywords: []
   },
   {
@@ -188,7 +188,7 @@ export const signalFlags = [
     type: 'xray',
     name: 'Xray',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/X-ray.svg',
+    image: 'images/signalflags/X-ray.svg',
     keywords: []
   },
   {
@@ -196,7 +196,7 @@ export const signalFlags = [
     type: 'yankee',
     name: 'Yankee',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Yankee.svg',
+    image: 'images/signalflags/Yankee.svg',
     keywords: []
   },
   {
@@ -204,7 +204,7 @@ export const signalFlags = [
     type: 'zulu',
     name: 'Zulu',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/d5de887a0c0db4c9a3eb5e3345becf0fa67fc0f8/public/images/signalflags/Zulu.svg',
+    image: 'images/signalflags/Zulu.svg',
     keywords: []
   },
   {
@@ -212,7 +212,7 @@ export const signalFlags = [
     type: 'one',
     name: 'One',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/One.svg',
+    image: 'images/signalflags/One.svg',
     keywords: ['1']
   },
   {
@@ -220,7 +220,7 @@ export const signalFlags = [
     type: 'two',
     name: 'Two',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Two.svg',
+    image: 'images/signalflags/Two.svg',
     keywords: ['2']
   },
   {
@@ -228,7 +228,7 @@ export const signalFlags = [
     type: 'three',
     name: 'Three',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Three.svg',
+    image: 'images/signalflags/Three.svg',
     keywords: ['3']
   },
   {
@@ -236,7 +236,7 @@ export const signalFlags = [
     type: 'four',
     name: 'Four',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Four.svg',
+    image: 'images/signalflags/Four.svg',
     keywords: ['4']
   },
   {
@@ -244,7 +244,7 @@ export const signalFlags = [
     type: 'five',
     name: 'Five',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Five.svg',
+    image: 'images/signalflags/Five.svg',
     keywords: ['5']
   },
   {
@@ -252,7 +252,7 @@ export const signalFlags = [
     type: 'six',
     name: 'Six',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Six.svg',
+    image: 'images/signalflags/Six.svg',
     keywords: ['6']
   },
   {
@@ -260,7 +260,7 @@ export const signalFlags = [
     type: 'seven',
     name: 'Seven',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Seven.svg',
+    image: 'images/signalflags/Seven.svg',
     keywords: ['7']
   },
   {
@@ -268,7 +268,7 @@ export const signalFlags = [
     type: 'eight',
     name: 'Eight',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Eight.svg',
+    image: 'images/signalflags/Eight.svg',
     keywords: ['8']
   },
   {
@@ -276,7 +276,7 @@ export const signalFlags = [
     type: 'nine',
     name: 'Nine',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Nine.svg',
+    image: 'images/signalflags/Nine.svg',
     keywords: ['9']
   },
   {
@@ -284,7 +284,7 @@ export const signalFlags = [
     type: 'zero',
     name: 'Zero',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Zero.svg',
+    image: 'images/signalflags/Zero.svg',
     keywords: ['0']
   },
   {
@@ -292,7 +292,7 @@ export const signalFlags = [
     type: 'squadron',
     name: 'Squadron',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Squadron.svg',
+    image: 'images/signalflags/Squadron.svg',
     keywords: []
   },
   {
@@ -300,7 +300,7 @@ export const signalFlags = [
     type: 'division',
     name: 'Division',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Division.svg',
+    image: 'images/signalflags/Division.svg',
     keywords: []
   },
   {
@@ -308,7 +308,7 @@ export const signalFlags = [
     type: 'port',
     name: 'Port',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/signalflags/Port.svg',
+    image: 'images/signalflags/Port.svg',
     keywords: []
   },
   {
@@ -316,7 +316,7 @@ export const signalFlags = [
     type: 'tackline',
     name: 'Tackline',
     category: 'flag' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/244efe976cc88d933f530710fb5a148e3796f52d/public/images/signalflags/Tackline.svg',
+    image: 'images/signalflags/Tackline.svg',
     keywords: []
   }
 ];
@@ -327,7 +327,7 @@ export const pennants = [
     type: 'pennant-one',
     name: 'Pennant One',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_One.svg',
+    image: 'images/pennants/Pennant_One.svg',
     keywords: ['1']
   },
   {
@@ -335,7 +335,7 @@ export const pennants = [
     type: 'pennant-two',
     name: 'Pennant Two',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Two.svg',
+    image: 'images/pennants/Pennant_Two.svg',
     keywords: ['2']
   },
   {
@@ -343,7 +343,7 @@ export const pennants = [
     type: 'pennant-three',
     name: 'Pennant Three',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Three.svg',
+    image: 'images/pennants/Pennant_Three.svg',
     keywords: ['3']
   },
   {
@@ -351,7 +351,7 @@ export const pennants = [
     type: 'pennant-four',
     name: 'Pennant Four',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Four.svg',
+    image: 'images/pennants/Pennant_Four.svg',
     keywords: ['4']
   },
   {
@@ -359,7 +359,7 @@ export const pennants = [
     type: 'pennant-five',
     name: 'Pennant Five',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Five.svg',
+    image: 'images/pennants/Pennant_Five.svg',
     keywords: ['5']
   },
   {
@@ -367,7 +367,7 @@ export const pennants = [
     type: 'pennant-six',
     name: 'Pennant Six',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Six.svg',
+    image: 'images/pennants/Pennant_Six.svg',
     keywords: ['6']
   },
   {
@@ -375,7 +375,7 @@ export const pennants = [
     type: 'pennant-seven',
     name: 'Pennant Seven',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Seven.svg',
+    image: 'images/pennants/Pennant_Seven.svg',
     keywords: ['7']
   },
   {
@@ -383,7 +383,7 @@ export const pennants = [
     type: 'pennant-eight',
     name: 'Pennant Eight',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Eight.svg',
+    image: 'images/pennants/Pennant_Eight.svg',
     keywords: ['8']
   },
   {
@@ -391,7 +391,7 @@ export const pennants = [
     type: 'pennant-nine',
     name: 'Pennant Nine',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Nine.svg',
+    image: 'images/pennants/Pennant_Nine.svg',
     keywords: ['9']
   },
   {
@@ -399,7 +399,7 @@ export const pennants = [
     type: 'pennant-zero',
     name: 'Pennant Zero',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Pennant_Zero.svg',
+    image: 'images/pennants/Pennant_Zero.svg',
     keywords: ['0']
   },
   {
@@ -407,7 +407,7 @@ export const pennants = [
     type: 'first-substitute',
     name: 'First Subsitute',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/First_Substitute.svg',
+    image: 'images/pennants/First_Substitute.svg',
     keywords: ['absentee', '1st']
   },
   {
@@ -415,7 +415,7 @@ export const pennants = [
     type: 'second-substitute',
     name: 'Second Subsitute',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Second_Substitute.svg',
+    image: 'images/pennants/Second_Substitute.svg',
     keywords: ['absentee', '2nd']
   },
   {
@@ -423,7 +423,7 @@ export const pennants = [
     type: 'third-substitute',
     name: 'Third Subsitute',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Third_Substitute.svg',
+    image: 'images/pennants/Third_Substitute.svg',
     keywords: ['absentee', '3rd']
   },
   {
@@ -431,7 +431,7 @@ export const pennants = [
     type: 'fourth-substitute',
     name: 'Fourth Subsitute',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Fourth_Substitute.svg',
+    image: 'images/pennants/Fourth_Substitute.svg',
     keywords: ['absentee', '4th']
   },
   {
@@ -439,7 +439,7 @@ export const pennants = [
     type: 'code',
     name: 'Code',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Code.svg',
+    image: 'images/pennants/Code.svg',
     keywords: ['answer']
   },
   {
@@ -447,7 +447,7 @@ export const pennants = [
     type: 'corpen',
     name: 'Corpen',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Corpen.svg',
+    image: 'images/pennants/Corpen.svg',
     keywords: []
   },
   {
@@ -455,7 +455,7 @@ export const pennants = [
     type: 'designation',
     name: 'Designation',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Designation.svg',
+    image: 'images/pennants/Designation.svg',
     keywords: []
   },
   {
@@ -463,7 +463,7 @@ export const pennants = [
     type: 'emergency',
     name: 'Emergency',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Emergency.svg',
+    image: 'images/pennants/Emergency.svg',
     keywords: []
   },
   {
@@ -471,7 +471,7 @@ export const pennants = [
     type: 'formation',
     name: 'Formation',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Formation.svg',
+    image: 'images/pennants/Formation.svg',
     keywords: []
   },
   {
@@ -479,7 +479,7 @@ export const pennants = [
     type: 'interogative',
     name: 'Interogative',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Interogative.svg',
+    image: 'images/pennants/Interogative.svg',
     keywords: []
   },
   {
@@ -487,7 +487,7 @@ export const pennants = [
     type: 'negative',
     name: 'Negative',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Negative.svg',
+    image: 'images/pennants/Negative.svg',
     keywords: []
   },
   {
@@ -495,7 +495,7 @@ export const pennants = [
     type: 'preparative',
     name: 'Preparative',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Preparatory.svg',
+    image: 'images/pennants/Preparatory.svg',
     keywords: []
   },
   {
@@ -503,7 +503,7 @@ export const pennants = [
     type: 'screen',
     name: 'Screen',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Screen.svg',
+    image: 'images/pennants/Screen.svg',
     keywords: []
   },
   {
@@ -511,7 +511,7 @@ export const pennants = [
     type: 'speed',
     name: 'Speed',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Speed.svg',
+    image: 'images/pennants/Speed.svg',
     keywords: ['black']
   },
   {
@@ -519,7 +519,7 @@ export const pennants = [
     type: 'starboard',
     name: 'Starboard',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Starboard.svg',
+    image: 'images/pennants/Starboard.svg',
     keywords: []
   },
   {
@@ -527,7 +527,7 @@ export const pennants = [
     type: 'station',
     name: 'Station',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Station.svg',
+    image: 'images/pennants/Station.svg',
     keywords: []
   },
   {
@@ -535,7 +535,7 @@ export const pennants = [
     type: 'turn',
     name: 'Turn',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Turn.svg',
+    image: 'images/pennants/Turn.svg',
     keywords: []
   },
   {
@@ -543,7 +543,7 @@ export const pennants = [
     type: 'flotilla',
     name: 'Flotilla',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Flotilla.svg',
+    image: 'images/pennants/Flotilla.svg',
     keywords: []
   },
   {
@@ -551,7 +551,7 @@ export const pennants = [
     type: 'subdivision',
     name: 'Subdivision',
     category: 'pennant' as const,
-    image: 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/1d91efb558710e0683ec146b813f059de8a3b445/public/images/pennants/Subdivision.svg',
+    image: 'images/pennants/Subdivision.svg',
     keywords: []
   }
 ];
