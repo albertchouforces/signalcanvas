@@ -56,7 +56,7 @@ const Header = () => {
                   animationDuration: '0.2s',
                 }}
               >
-                <div className="font-medium mb-1">(Version 1.0)</div>
+                <div className="font-medium mb-1">(Version 2.0)</div>
                 <p>
                   This is a professional development learning project. For more information 
                   please contact the Learning Support Centre Product Development Lead (Pacific) at{' '}
