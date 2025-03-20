@@ -35,7 +35,7 @@ const PlayArea = () => {
     };
     
     // Set the image source
-    img.src = 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png';
+    img.src = 'images/navcommmast.png';
     
     // Clean up
     return () => {
