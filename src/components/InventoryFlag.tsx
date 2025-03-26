@@ -68,9 +68,6 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
   
-  // Adjust flag size in inventory based on device
-  const flagHeight = isMobile ? '14px' : '16px';
-
   // Use ref callback pattern to avoid direct .current assignment
   const flagRefCallback = (node: HTMLDivElement | null) => {
     flagRef.current = node;
