@@ -33,3 +33,30 @@ export const isMobileDevice = (): boolean => {
 export const getViewportWidth = (): number => {
   return window.innerWidth;
 };
+
+/**
+ * Gets the current viewport height.
+ * 
+ * @returns {number} The current viewport height in pixels.
+ */
+export const getViewportHeight = (): number => {
+  return window.innerHeight;
+};
+
+/**
+ * Detects if the device is in portrait orientation.
+ * 
+ * @returns {boolean} True if the device is in portrait orientation, false otherwise.
+ */
+export const isPortraitOrientation = (): boolean => {
+  return window.innerHeight > window.innerWidth;
+};
+
+/**
+ * Detects if the device has a very small screen (less than 360px wide).
+ * 
+ * @returns {boolean} True if the device has a very small screen, false otherwise.
+ */
+export const isVerySmallScreen = (): boolean => {
+  return window.innerWidth < 360;
+};

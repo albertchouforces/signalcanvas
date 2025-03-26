@@ -2,7 +2,7 @@ import { createContext, useState, useContext, useEffect, ReactNode, useCallback,
 import { nanoid } from 'nanoid';
 import { getAllSignals } from '../data/signalFlags';
 import html2canvas from 'html2canvas';
-import { isMobileDevice } from '../utils/deviceDetection';
+import { isMobileDevice, getViewportWidth } from '../utils/deviceDetection';
 
 export interface Flag {
   id: string;
@@ -139,11 +139,33 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     }
   };
 
+  // Calculate visible canvas height by accounting for other UI elements
+  const getVisibleCanvasHeight = useCallback((): number => {
+    const playAreaNode = playAreaRef.current;
+    
+    if (!playAreaNode) {
+      // Default fallback if play area is not available
+      return window.innerHeight - 300; // Rough estimate
+    }
+    
+    const playAreaRect = playAreaNode.getBoundingClientRect();
+    
+    // Get the distance from top of the viewport to the top of the canvas
+    const topOffset = playAreaRect.top;
+    
+    // Leave some bottom margin for UI elements and padding
+    const bottomMargin = 70;
+    
+    // Calculate the actual visible height
+    return window.innerHeight - topOffset - bottomMargin;
+  }, []);
+
   // Get grid configuration based on current play area size
   // Modified to support vertical filling with maxItemsPerColumn
   const getGridConfig = useCallback((): GridConfig => {
     const playAreaNode = playAreaRef.current;
     const isMobile = isMobileDevice();
+    const viewportWidth = getViewportWidth();
     
     if (!playAreaNode) {
       // Default values if play area is not available
@@ -154,33 +176,45 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         itemHeight: isMobile ? 42 : 64, // Smaller flag height on mobile
         horizontalSpacing: isMobile ? 16 : 20, // Reduced horizontal spacing on mobile
         verticalSpacing: isMobile ? 12 : 20, // Significantly reduced vertical spacing on mobile
-        maxItemsPerColumn: isMobile ? 7 : 5, // Increased max items per column on mobile
+        maxItemsPerColumn: isMobile ? 5 : 5, // Default max items, will be adjusted below
       };
     }
 
     // Get play area dimensions
     const areaRect = playAreaNode.getBoundingClientRect();
     const areaWidth = areaRect.width;
-    const areaHeight = areaRect.height;
     
-    // Flag dimensions - smaller on mobile
-    const itemWidth = isMobile ? 42 : 64; // Smaller flag width on mobile
-    const itemHeight = isMobile ? 42 : 64; // Smaller flag height on mobile
+    // Calculate visible canvas height
+    const visibleCanvasHeight = getVisibleCanvasHeight();
     
-    // Spacing - use reduced spacing on mobile to maximize flag count
-    const horizontalSpacing = isMobile ? 16 : 20; // Reduced horizontal spacing on mobile
-    const verticalSpacing = isMobile ? 12 : 20; // Significantly reduced vertical spacing on mobile
+    // Flag dimensions - smaller on mobile and even smaller on very small screens
+    const itemWidth = isMobile ? (viewportWidth < 360 ? 36 : 42) : 64;
+    const itemHeight = isMobile ? (viewportWidth < 360 ? 36 : 42) : 64;
+    
+    // Spacing - adjust based on device size
+    const horizontalSpacing = isMobile ? (viewportWidth < 360 ? 14 : 16) : 20;
+    const verticalSpacing = isMobile ? (viewportWidth < 360 ? 10 : 12) : 20;
     
     // Calculate how many flags can fit in a column with proper spacing
-    // Reduced buffer on mobile to allow for more flags per column
-    const heightBuffer = isMobile ? 60 : 100;
-    const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - heightBuffer) / (itemHeight + verticalSpacing)));
+    // Account for top and bottom padding
+    const topPadding = isMobile ? 45 : 55;
+    const bottomPadding = isMobile ? 20 : 30;
+    
+    // Available height for flags
+    const availableHeight = visibleCanvasHeight - topPadding - bottomPadding;
+    
+    // Calculate max items per column based on available height
+    const flagsPerColumn = Math.floor(availableHeight / (itemHeight + verticalSpacing));
+    
+    // Ensure at least 1 flag per column, but cap at a reasonable number
+    const maxItemsPerColumn = Math.max(1, Math.min(flagsPerColumn, isMobile ? 6 : 5));
     
     // Start position - adjusted for mobile with reduced left padding
     // For mobile, use a fixed smaller indentation from the left
     let startX;
     if (isMobile) {
-      startX = 36; // Further reduced left indentation for mobile
+      // Adjust left margin based on screen size
+      startX = viewportWidth < 360 ? 28 : 36;
     } else {
       // For desktop, center the grid as before
       startX = (areaWidth - (3 * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
@@ -188,15 +222,25 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     return {
       startX,
-      startY: isMobile ? 45 : 55, // Reduced top padding on mobile
+      startY: topPadding,
       itemWidth,
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      // For mobile, allow for more flags per column to make better use of vertical space
-      maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 7) : maxItemsPerColumn,
+      maxItemsPerColumn
     };
-  }, []);
+  }, [getVisibleCanvasHeight]);
+
+  // Check if a flag position would extend beyond the visible canvas area
+  const wouldExtendBeyondCanvas = useCallback((row: number, gridConfig: GridConfig): boolean => {
+    const visibleCanvasHeight = getVisibleCanvasHeight();
+    
+    // Calculate the bottom position of a flag at the given row
+    const flagBottom = gridConfig.startY + (row + 1) * (gridConfig.itemHeight + gridConfig.verticalSpacing);
+    
+    // Check if the bottom of the flag would extend beyond visible canvas
+    return flagBottom > visibleCanvasHeight;
+  }, [getVisibleCanvasHeight]);
 
   // Automatically place a flag on the canvas based on grid position
   // Updated to fill vertically instead of horizontally and ensure consistent alignment
@@ -207,8 +251,15 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Get current grid configuration
     const gridConfig = getGridConfig();
     
-    // Calculate position based on current grid position
-    const { col, row } = gridPositionRef.current;
+    // Get current grid position
+    let { col, row } = gridPositionRef.current;
+    
+    // Check if placing at current position would extend beyond canvas
+    if (wouldExtendBeyondCanvas(row, gridConfig)) {
+      // If it would extend beyond, move to next column
+      col += 1;
+      row = 0;
+    }
     
     // Calculate positions consistently to maintain alignment across all columns
     // Adding itemWidth/2 centers the flag at the grid position
@@ -227,8 +278,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     setPlacedFlags(prev => [...prev, newFlag]);
     
     // Update grid position for next flag - fill vertically first
-    if (row + 1 >= gridConfig.maxItemsPerColumn) {
+    if (row + 1 >= gridConfig.maxItemsPerColumn || wouldExtendBeyondCanvas(row + 1, gridConfig)) {
       // Move to next column if we've reached the bottom of the current column
+      // or if the next position would extend beyond the canvas
       gridPositionRef.current = { col: col + 1, row: 0 };
     } else {
       // Otherwise move down in the same column
@@ -240,7 +292,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     // Show success notification
     setNotification({ message: `${flagToAdd.name} placed on canvas`, type: 'success' });
-  }, [inventory, getGridConfig]);
+  }, [inventory, getGridConfig, wouldExtendBeyondCanvas]);
 
   const addFlag = useCallback((flagType: string, left: number, top: number) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
