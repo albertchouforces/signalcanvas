@@ -2,6 +2,7 @@ import { useDrag } from 'react-dnd';
 import { PlacedFlag, useSignal } from '../context/SignalContext';
 import { X } from 'lucide-react';
 import { useRef, useEffect, useState } from 'react';
+import { isMobileDevice } from '../utils/deviceDetection';
 
 interface DraggableFlagProps {
   flag: PlacedFlag;
@@ -12,6 +13,7 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   const { removeFlag, getPlayAreaNode } = useSignal();
   const flagRef = useRef<HTMLDivElement | null>(null);
   const [shouldFlip, setShouldFlip] = useState(false);
+  const isMobile = isMobileDevice();
   
   // Check if the flag should be flipped based on its position
   useEffect(() => {
@@ -68,6 +70,23 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
 
+  // Determine flag size based on device type
+  const flagHeight = isMobile ? 
+    (isTackline ? '38px' : '48px') : // Smaller on mobile
+    (isTackline ? '48px' : '64px');  // Regular size on desktop
+  
+  const flagWidth = isMobile ?
+    (isTackline ? '48px' : '36px') : // Smaller on mobile
+    (isTackline ? '64px' : '48px');  // Regular size on desktop
+  
+  const flagMinWidth = isMobile ? 
+    (isTackline ? '48px' : '36px') : // Smaller on mobile
+    (isTackline ? '64px' : '48px');  // Regular size on desktop
+  
+  const flagMinHeight = isMobile ? 
+    (isTackline ? '38px' : '48px') : // Smaller on mobile
+    (isTackline ? '48px' : '64px');  // Regular size on desktop
+
   // Use ref callback pattern to avoid direct .current assignment
   const flagRefCallback = (node: HTMLDivElement | null) => {
     flagRef.current = node;
@@ -91,29 +110,26 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
         <img
           src={flag.image}
           alt={flag.name}
-          className="h-16 w-auto object-contain no-select no-touch-action no-drag-image"
+          className="object-contain no-select no-touch-action no-drag-image"
           style={{
-            ...(isTackline ? {
-              maxWidth: '64px',  // Match width of other flags
-              height: '48px',    // Slightly smaller height
-              objectFit: 'contain',
-              objectPosition: 'center'
-            } : {}),
+            height: flagHeight,
+            width: 'auto',
+            maxWidth: isTackline ? (isMobile ? '48px' : '64px') : 'none',
             // Apply horizontal flip transform when the flag should be flipped
             transform: shouldFlip ? 'scaleX(-1)' : 'none',
             transition: 'transform 0.2s ease', // Smooth transition when flipping
-            minWidth: isTackline ? '64px' : '48px', // Ensure minimum width
-            minHeight: isTackline ? '48px' : '64px', // Ensure minimum height
+            minWidth: flagMinWidth,
+            minHeight: flagMinHeight,
           }}
           draggable={false}
           onContextMenu={(e) => e.preventDefault()}
         />
         <button
           onClick={handleRemove}
-          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 
-                    opacity-0 group-hover:opacity-100 transition-opacity"
+          className={`absolute -top-2 ${isMobile ? '-right-1' : '-right-2'} bg-red-500 text-white rounded-full 
+                    ${isMobile ? 'p-0.5' : 'p-1'} opacity-0 group-hover:opacity-100 transition-opacity`}
         >
-          <X className="h-3 w-3" />
+          <X className={`${isMobile ? 'h-2.5 w-2.5' : 'h-3 w-3'}`} />
         </button>
       </div>
     </div>

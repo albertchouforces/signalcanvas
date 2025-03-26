@@ -67,6 +67,9 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
 
   // Determine if this is a tackline flag
   const isTackline = flag.type === 'tackline';
+  
+  // Adjust flag size in inventory based on device
+  const flagHeight = isMobile ? '14px' : '16px';
 
   // Use ref callback pattern to avoid direct .current assignment
   const flagRefCallback = (node: HTMLDivElement | null) => {
@@ -102,17 +105,17 @@ const InventoryFlag = ({ flag }: InventoryFlagProps) => {
         ref={imageRefCallback}
         src={flag.image}
         alt={flag.name}
-        className="h-16 w-auto object-contain mb-2 no-select no-touch-action no-drag-image"
-        style={isTackline ? {
-          maxWidth: '64px',  // Match width in inventory
-          height: '48px',    // Slightly smaller height
+        className="w-auto object-contain mb-2 no-select no-touch-action no-drag-image"
+        style={{
+          height: isMobile ? '48px' : '64px', // Slightly smaller on mobile
+          maxWidth: isTackline ? (isMobile ? '48px' : '64px') : undefined,
           objectFit: 'contain',
           objectPosition: 'center'
-        } : undefined}
+        }}
         draggable={false}
         onContextMenu={(e) => e.preventDefault()}
       />
-      <span className="text-sm text-center">{flag.name}</span>
+      <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-center`}>{flag.name}</span>
     </div>
   );
 };

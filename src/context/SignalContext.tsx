@@ -149,12 +149,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Default values if play area is not available
       return {
         startX: isMobile ? 40 : 80, // Reduced indentation for mobile
-        startY: 55, // Further reduced from 80px to 60px to allow an extra flag on the bottom row
-        itemWidth: 64, // Default flag width
-        itemHeight: 64, // Default flag height
-        horizontalSpacing: 20, // Default horizontal spacing between flags
-        verticalSpacing: isMobile ? 16 : 20, // Reduced vertical spacing on mobile to fit more flags
-        maxItemsPerColumn: 5, // Default maximum items per column for mobile
+        startY: isMobile ? 45 : 55, // Reduced top margin for mobile
+        itemWidth: isMobile ? 42 : 64, // Smaller flag width on mobile
+        itemHeight: isMobile ? 42 : 64, // Smaller flag height on mobile
+        horizontalSpacing: isMobile ? 16 : 20, // Reduced horizontal spacing on mobile
+        verticalSpacing: isMobile ? 12 : 20, // Significantly reduced vertical spacing on mobile
+        maxItemsPerColumn: isMobile ? 7 : 5, // Increased max items per column on mobile
       };
     }
 
@@ -163,24 +163,24 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const areaWidth = areaRect.width;
     const areaHeight = areaRect.height;
     
-    // Flag dimensions
-    const itemWidth = 64; // Flag width
-    const itemHeight = 64; // Flag height
+    // Flag dimensions - smaller on mobile
+    const itemWidth = isMobile ? 42 : 64; // Smaller flag width on mobile
+    const itemHeight = isMobile ? 42 : 64; // Smaller flag height on mobile
     
     // Spacing - use reduced spacing on mobile to maximize flag count
-    const horizontalSpacing = 20;
-    const verticalSpacing = isMobile ? 16 : 20; // Reduced vertical spacing on mobile
+    const horizontalSpacing = isMobile ? 16 : 20; // Reduced horizontal spacing on mobile
+    const verticalSpacing = isMobile ? 12 : 20; // Significantly reduced vertical spacing on mobile
     
     // Calculate how many flags can fit in a column with proper spacing
-    // Reduced buffer from 100px to 70px to allow for more flags per column
-    const heightBuffer = isMobile ? 70 : 100;
+    // Reduced buffer on mobile to allow for more flags per column
+    const heightBuffer = isMobile ? 60 : 100;
     const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - heightBuffer) / (itemHeight + verticalSpacing)));
     
     // Start position - adjusted for mobile with reduced left padding
     // For mobile, use a fixed smaller indentation from the left
     let startX;
     if (isMobile) {
-      startX = 40; // Reduced left indentation for mobile
+      startX = 36; // Further reduced left indentation for mobile
     } else {
       // For desktop, center the grid as before
       startX = (areaWidth - (3 * (itemWidth + horizontalSpacing) - horizontalSpacing)) / 2;
@@ -188,14 +188,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     return {
       startX,
-      startY: 55, // Further reduced top padding from 80px to 60px for more vertical space
+      startY: isMobile ? 45 : 55, // Reduced top padding on mobile
       itemWidth,
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      // Allow up to maxItemsPerColumn on mobile without artificial cap at 5
-      // This ensures we use all available space while ensuring consistent alignment
-      maxItemsPerColumn,
+      // For mobile, allow for more flags per column to make better use of vertical space
+      maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 7) : maxItemsPerColumn,
     };
   }, []);
 
@@ -328,7 +327,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         // Ensure the background image is visible in the clone
         const backgroundDiv = captureEl.querySelector(':first-child') as HTMLElement;
         if (backgroundDiv) {
-          backgroundDiv.style.backgroundImage = 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)';
+          backgroundDiv.style.backgroundImage = 'url(images/navcommmast.png)';
           backgroundDiv.style.backgroundSize = 'contain';
           backgroundDiv.style.backgroundPosition = 'top center';
           backgroundDiv.style.backgroundRepeat = 'no-repeat';
@@ -363,7 +362,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
           if (clonedEl) {
             const bgDiv = clonedEl.querySelector(':first-child') as HTMLElement;
             if (bgDiv) {
-              bgDiv.style.backgroundImage = 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)';
+              bgDiv.style.backgroundImage = 'url(images/navcommmast.png)';
               bgDiv.style.display = 'block';
               bgDiv.style.opacity = '1';
               bgDiv.style.visibility = 'visible';
