@@ -28,6 +28,8 @@ interface GridConfig {
   verticalSpacing: number;
   maxItemsPerColumn: number; // Changed from maxItemsPerRow to maxItemsPerColumn
   columnWidth: number; // Added to track actual column width for better overflow handling
+  canvasWidth: number; // Added to track the canvas width for boundary checking
+  safetyMargin: number; // Added to provide a safety margin at canvas edges
 }
 
 interface SignalContextType {
@@ -167,7 +169,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   };
 
   // Get grid configuration based on current play area size
-  // Modified to include columnWidth for better overflow handling
+  // Modified to include columnWidth for better overflow handling and canvas boundaries
   const getGridConfig = useCallback((): GridConfig => {
     const playAreaNode = playAreaRef.current;
     const isMobile = isMobileDevice();
@@ -183,6 +185,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Calculate column width including spacing to prevent overflow
     const columnWidth = itemWidth + horizontalSpacing;
     
+    // Safety margin to ensure flags aren't placed too close to the edge
+    const safetyMargin = isMobile ? 8 : 16;
+    
     if (!playAreaNode) {
       // Default values if play area is not available
       return {
@@ -193,7 +198,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         horizontalSpacing,
         verticalSpacing,
         maxItemsPerColumn: isMobile ? 8 : 5, // Increased max items per column on mobile
-        columnWidth
+        columnWidth,
+        canvasWidth: 320, // Fallback canvas width
+        safetyMargin
       };
     }
 
@@ -224,12 +231,23 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       horizontalSpacing,
       verticalSpacing,
       maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 8) : maxItemsPerColumn,
-      columnWidth
+      columnWidth,
+      canvasWidth: areaWidth, // Store the canvas width for boundary checks
+      safetyMargin
     };
   }, []);
 
+  // Check if a flag would exceed canvas boundaries at a given position
+  const wouldExceedCanvasBoundary = useCallback((left: number, gridConfig: GridConfig): boolean => {
+    // Calculate the rightmost point of the flag (center point + half width + safety margin)
+    const flagRightEdge = left + (gridConfig.itemWidth / 2) + gridConfig.safetyMargin;
+    
+    // Check if it exceeds the canvas width
+    return flagRightEdge > gridConfig.canvasWidth;
+  }, []);
+
   // Automatically place a flag on the canvas based on grid position
-  // Updated to properly handle columns and prevent overflow
+  // Updated to properly handle columns and prevent overflow beyond canvas boundaries
   const autoPlaceFlag = useCallback((flagType: string) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
     if (!flagToAdd) return;
@@ -238,10 +256,23 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const gridConfig = getGridConfig();
     
     // Get current column and row position
-    const { col, row } = gridPositionRef.current;
+    let { col, row } = gridPositionRef.current;
     
-    // Calculate position
-    const left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+    // Calculate initial position
+    let left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+    
+    // Check if this position would cause flag to exceed canvas boundary
+    if (wouldExceedCanvasBoundary(left, gridConfig)) {
+      // Move back to first column but at a new row
+      col = 0;
+      // Find the highest row in the first column
+      const firstColHeight = columnHeightsRef.current[0] || gridConfig.startY;
+      row = Math.ceil((firstColHeight - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing));
+      
+      // Recalculate position with new column
+      left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+    }
+    
     const top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
     
     // Create new flag with calculated position
@@ -263,6 +294,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     if (row + 1 >= gridConfig.maxItemsPerColumn) {
       // Move to next column if current column is full
       gridPositionRef.current = { col: col + 1, row: 0 };
+      
+      // Check if the next column would exceed canvas boundaries
+      const nextColLeft = gridConfig.startX + (col + 1) * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+      if (wouldExceedCanvasBoundary(nextColLeft, gridConfig)) {
+        // If it would exceed, wrap back to first column
+        gridPositionRef.current = { col: 0, row: row + 1 };
+      }
     } else {
       // Move down in the same column
       gridPositionRef.current = { col, row: row + 1 };
@@ -273,7 +311,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     // Show success notification
     setNotification({ message: `${flagToAdd.name} placed on canvas`, type: 'success' });
-  }, [inventory, getGridConfig]);
+  }, [inventory, getGridConfig, wouldExceedCanvasBoundary]);
 
   const addFlag = useCallback((flagType: string, left: number, top: number) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);

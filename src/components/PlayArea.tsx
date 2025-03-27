@@ -168,6 +168,20 @@ const PlayArea = () => {
         top -= item.mouseOffset.y;
       }
       
+      // Check if the drop position would put the flag partly outside the canvas
+      // Add a safety margin to prevent flags from being cut off
+      const flagHalfWidth = (item.flagRect?.width || 64) / 2;
+      const safetyMargin = 8; // Small buffer to ensure the flag isn't right at the edge
+      
+      // Enforce canvas boundaries
+      if (left - flagHalfWidth < safetyMargin) {
+        left = flagHalfWidth + safetyMargin;
+      }
+      
+      if (left + flagHalfWidth > playAreaRect.width - safetyMargin) {
+        left = playAreaRect.width - flagHalfWidth - safetyMargin;
+      }
+      
       if (item.id && item.isDragging) {
         // Moving an existing flag
         moveFlag(item.id, left, top);
@@ -207,7 +221,7 @@ const PlayArea = () => {
         <div 
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            backgroundImage: 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)',
+            backgroundImage: 'url(images/navcommmast.png)',
             backgroundSize: 'contain',
             backgroundPosition: 'top center',
             backgroundRepeat: 'no-repeat',
