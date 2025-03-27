@@ -26,13 +26,14 @@ interface GridConfig {
   itemHeight: number;
   horizontalSpacing: number;
   verticalSpacing: number;
-  maxItemsPerColumn: number; // Changed from maxItemsPerRow to maxItemsPerColumn
-  columnWidth: number; // Added to track actual column width for better overflow handling
-  canvasWidth: number; // Added to track the canvas width for boundary checking
-  canvasHeight: number; // Added to track the canvas height for boundary checking
-  safetyMargin: number; // Added to provide a safety margin at canvas edges
-  maxColumns: number; // Added to explicitly track how many columns can fit
-  columnPositions: number[]; // Fixed positions for each column to prevent staircase effect
+  maxItemsPerColumn: number;
+  columnWidth: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  safetyMargin: number;
+  maxColumns: number;
+  // Added to track actual visible height for flags
+  usableCanvasHeight: number;
 }
 
 interface SignalContextType {
@@ -72,20 +73,17 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   const [selectedFlag, setSelectedFlag] = useState<Flag | null>(null);
   const playAreaRef = useRef<HTMLElement | null>(null);
   
-  // Keep track of the current grid position for auto-placement
-  // Changed to track column and row positions for vertical filling
+  // Simplified grid position tracking - just track current column and row
   const gridPositionRef = useRef<{ col: number; row: number }>({ col: 0, row: 0 });
   
-  // Keep track of column heights to ensure proper column transitions
-  const columnHeightsRef = useRef<Record<number, number>>({});
+  // Store current grid config to ensure consistent placement
+  const currentGridConfigRef = useRef<GridConfig | null>(null);
   
-  // Flag to track if we're currently transitioning to a new column
-  // This prevents double flag placement during column transitions
-  const isTransitioningColumnRef = useRef<boolean>(false);
+  // Flag to prevent double placement during column transitions
+  const isProcessingPlacementRef = useRef<boolean>(false);
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
-    // Type assertion to ensure getAllSignals() matches the Flag[] type
     setInventory(getAllSignals() as Flag[]);
   }, []);
 
@@ -96,8 +94,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       try {
         const parsedFlags = JSON.parse(savedFlags);
         setPlacedFlags(parsedFlags);
-        // Update grid position based on existing flags when loading from storage
-        updateGridPositionFromExistingFlags(parsedFlags);
+        
+        // Initialize grid position for existing flags
+        initializeGridPosition();
       } catch (e) {
         console.error('Error loading saved flags', e);
       }
@@ -119,78 +118,51 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     localStorage.setItem('placedFlags', JSON.stringify(placedFlags));
   }, [placedFlags]);
 
-  // Update grid position based on existing flags to avoid overlaps
-  // Modified to track columns and rows for vertical filling and calculate column heights
-  const updateGridPositionFromExistingFlags = (flags: PlacedFlag[]) => {
-    if (!flags.length) {
-      gridPositionRef.current = { col: 0, row: 0 };
-      columnHeightsRef.current = {};
-      return;
-    }
-
-    // Get grid configuration
+  // Initialize grid position based on window size and existing flags
+  const initializeGridPosition = useCallback(() => {
+    // Generate a fresh grid config
     const gridConfig = getGridConfig();
+    currentGridConfigRef.current = gridConfig;
     
-    // Reset column heights
-    columnHeightsRef.current = {};
+    // Start with empty grid
+    gridPositionRef.current = { col: 0, row: 0 };
     
-    // Calculate column heights based on flag positions
-    flags.forEach(flag => {
-      // Find which column this flag belongs to by finding the closest column position
-      let closestColIndex = 0;
-      let minDistance = Infinity;
-      gridConfig.columnPositions.forEach((colPos, index) => {
-        const distance = Math.abs(flag.left - colPos);
-        if (distance < minDistance) {
-          minDistance = distance;
-          closestColIndex = index;
+    // If we have flags, find the suitable next position
+    if (placedFlags.length > 0) {
+      // Find the flag with the highest position
+      let highestCol = 0;
+      let highestRow = 0;
+      
+      placedFlags.forEach(flag => {
+        // Convert position to column and row
+        const col = Math.floor((flag.left - gridConfig.startX) / gridConfig.columnWidth);
+        const row = Math.floor((flag.top - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing));
+        
+        // Update highest position
+        if (col > highestCol || (col === highestCol && row > highestRow)) {
+          highestCol = col;
+          highestRow = row;
         }
       });
       
-      const rowBottom = flag.top + (gridConfig.itemHeight / 2);
+      // Set to next position
+      highestRow++;
+      if (highestRow >= gridConfig.maxItemsPerColumn) {
+        highestRow = 0;
+        highestCol++;
+      }
       
-      // Update the height of this column
-      columnHeightsRef.current[closestColIndex] = Math.max(
-        columnHeightsRef.current[closestColIndex] || 0, 
-        rowBottom
-      );
-    });
-    
-    // Find the column with the smallest height
-    let minHeightCol = 0;
-    let minHeight = Infinity;
-    
-    Object.entries(columnHeightsRef.current).forEach(([colStr, height]) => {
-      const col = parseInt(colStr, 10);
-      if (height < minHeight) {
-        minHeight = height;
-        minHeightCol = col;
+      // Check if we need to reset to first column
+      if (highestCol >= gridConfig.maxColumns) {
+        highestCol = 0;
+        highestRow = 0;
       }
-    });
-    
-    // Calculate row based on column height
-    const minHeightRow = columnHeightsRef.current[minHeightCol] ? 
-      Math.ceil((columnHeightsRef.current[minHeightCol] - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing)) : 0;
-    
-    // Set the next position
-    if (minHeightRow >= gridConfig.maxItemsPerColumn) {
-      // Find the next available column
-      let nextCol = 0;
-      while (columnHeightsRef.current[nextCol] && 
-             columnHeightsRef.current[nextCol] > gridConfig.startY + gridConfig.itemHeight) {
-        nextCol++;
-      }
-      gridPositionRef.current = { col: nextCol, row: 0 };
-    } else {
-      gridPositionRef.current = { col: minHeightCol, row: minHeightRow };
+      
+      gridPositionRef.current = { col: highestCol, row: highestRow };
     }
-    
-    // Reset column transition flag
-    isTransitioningColumnRef.current = false;
-  };
+  }, [placedFlags]);
 
-  // Get grid configuration based on current play area size
-  // Modified to include columnWidth for better overflow handling and canvas boundaries
+  // Get grid configuration - completely revamped for mobile
   const getGridConfig = useCallback((): GridConfig => {
     const playAreaNode = playAreaRef.current;
     const isMobile = isMobileDevice();
@@ -200,20 +172,17 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const itemHeight = isMobile ? 42 : 64;
     
     // Spacing - tighter on mobile
-    const horizontalSpacing = isMobile ? 16 : 24; // Reduced for more compact mobile layout
-    const verticalSpacing = isMobile ? 10 : 20;   // Reduced vertical spacing on mobile to fit more flags
+    const horizontalSpacing = isMobile ? 16 : 24;
+    const verticalSpacing = isMobile ? 10 : 20;
     
     // Calculate actual column width including spacing
     const columnWidth = itemWidth + horizontalSpacing;
     
-    // Safety margin to ensure flags aren't placed too close to the edge
+    // Safety margin to prevent flags from touching the edge
     const safetyMargin = isMobile ? 20 : 16;
     
     if (!playAreaNode) {
       // Default values if play area is not available
-      // Create default column positions
-      const defaultColumnPositions = [40, 100, 160, 220]; // Fixed positions for columns
-      
       return {
         startX: isMobile ? 40 : 80,
         startY: isMobile ? 45 : 55,
@@ -223,225 +192,169 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         verticalSpacing,
         maxItemsPerColumn: isMobile ? 8 : 5,
         columnWidth,
-        canvasWidth: 320, // Fallback canvas width
-        canvasHeight: 480, // Fallback canvas height
+        canvasWidth: 320,
+        canvasHeight: 480,
         safetyMargin,
-        maxColumns: 4, // Default max columns
-        columnPositions: defaultColumnPositions
+        maxColumns: 4,
+        usableCanvasHeight: 400
       };
     }
 
-    // Get play area dimensions
+    // Get accurate play area dimensions
     const areaRect = playAreaNode.getBoundingClientRect();
     const areaWidth = areaRect.width;
     const areaHeight = areaRect.height;
     
-    // Calculate max items per column with proper spacing
-    const bottomSafetyBuffer = isMobile ? 60 : 100;
-    const heightBuffer = isMobile ? 40 : 100;
+    // Calculate usable canvas height (accounting for UI elements)
+    const topBuffer = isMobile ? 55 : 65;
+    const bottomBuffer = isMobile ? 60 : 80;
+    const usableCanvasHeight = areaHeight - topBuffer - bottomBuffer;
     
-    const maxItemsPerColumn = Math.max(1, Math.floor(
-      (areaHeight - heightBuffer - bottomSafetyBuffer) / (itemHeight + verticalSpacing)
-    ));
+    // Calculate max items per column based on available height
+    // This is the key change - we calculate exactly how many flags can fit
+    const itemSpacing = itemHeight + verticalSpacing;
+    const maxItemsPerColumn = Math.max(1, Math.floor(usableCanvasHeight / itemSpacing));
     
-    // Calculate maximum number of columns that can fit
+    // Calculate start position
+    const startX = isMobile 
+      ? Math.max(itemWidth/2 + safetyMargin, 40)
+      : Math.max(80, (areaWidth - (3 * columnWidth - horizontalSpacing)) / 2);
+    
+    const startY = topBuffer;
+    
+    // Calculate maximum number of columns
     const usableWidth = areaWidth - (2 * safetyMargin);
     const maxColumns = Math.floor((usableWidth - itemWidth) / columnWidth) + 1;
-    const actualMaxColumns = Math.max(1, Math.min(maxColumns, 4)); // Limit to 4 columns max
-    
-    // Calculate fixed column positions to prevent staircase effect
-    // This ensures each column starts at a consistent horizontal position
-    const columnPositions: number[] = [];
-    
-    // Calculate the fixed positions for each column
-    // Start with safety margin + half item width, then evenly distribute
-    const availableWidth = areaWidth - (2 * safetyMargin);
-    const columnStep = availableWidth / (actualMaxColumns + 0.5); // Add 0.5 to create better spacing
-    
-    for (let i = 0; i < actualMaxColumns; i++) {
-      // First column starts at safetyMargin + itemWidth/2
-      const colPosition = safetyMargin + itemWidth/2 + (i * columnStep);
-      columnPositions.push(colPosition);
-    }
     
     return {
-      startX: columnPositions[0], // First column position is the startX
-      startY: isMobile ? Math.max(itemHeight/2 + safetyMargin, 45) : 55,
+      startX,
+      startY,
       itemWidth,
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 8) : maxItemsPerColumn,
+      maxItemsPerColumn,
       columnWidth,
       canvasWidth: areaWidth,
       canvasHeight: areaHeight,
       safetyMargin,
-      maxColumns: actualMaxColumns,
-      columnPositions
+      maxColumns: Math.max(1, maxColumns),
+      usableCanvasHeight
     };
   }, []);
 
-  // Enhanced boundary check - now checks all edges of the canvas
-  const wouldExceedCanvasBoundary = useCallback((left: number, top: number, gridConfig: GridConfig): boolean => {
+  // Check if a position would exceed canvas boundaries
+  const wouldExceedBoundary = useCallback((left: number, top: number, gridConfig: GridConfig): boolean => {
     const halfWidth = gridConfig.itemWidth / 2;
     const halfHeight = gridConfig.itemHeight / 2;
     const margin = gridConfig.safetyMargin;
     
-    // Calculate all edges of the flag
+    // Calculate flag edges
     const flagLeftEdge = left - halfWidth;
     const flagRightEdge = left + halfWidth;
     const flagTopEdge = top - halfHeight;
     const flagBottomEdge = top + halfHeight;
     
-    // Check if any edge would exceed canvas boundaries with safety margin
-    const exceedsLeft = flagLeftEdge < margin;
-    const exceedsRight = flagRightEdge > gridConfig.canvasWidth - margin;
-    const exceedsTop = flagTopEdge < margin;
-    const exceedsBottom = flagBottomEdge > gridConfig.canvasHeight - margin;
-    
-    // Return true if any boundary would be exceeded
-    return exceedsLeft || exceedsRight || exceedsTop || exceedsBottom;
+    // Check all boundaries
+    return (
+      flagLeftEdge < margin ||
+      flagRightEdge > gridConfig.canvasWidth - margin ||
+      flagTopEdge < margin ||
+      flagBottomEdge > gridConfig.canvasHeight - margin
+    );
   }, []);
 
-  // Automatically place a flag on the canvas based on grid position
-  // Updated to properly handle columns and prevent overflow beyond canvas boundaries
+  // Completely revised auto-placement logic for mobile
   const autoPlaceFlag = useCallback((flagType: string) => {
-    // Don't place a flag if we're in the middle of transitioning columns
-    // This prevents the bug of extra flags being added during column transitions
-    if (isTransitioningColumnRef.current) {
-      isTransitioningColumnRef.current = false;
+    // Prevent duplicate placements
+    if (isProcessingPlacementRef.current) {
       return;
     }
     
-    const flagToAdd = inventory.find((f) => f.type === flagType);
-    if (!flagToAdd) return;
-
-    // Get current grid configuration
-    const gridConfig = getGridConfig();
+    isProcessingPlacementRef.current = true;
     
-    // Get current column and row position
-    let { col, row } = gridPositionRef.current;
-    
-    // Ensure column is within bounds of maxColumns
-    if (col >= gridConfig.maxColumns) {
-      col = 0;
-      row = 0;
-    }
-    
-    // Get the exact position from the fixed column positions array
-    // This ensures columns are consistently positioned
-    let left = gridConfig.columnPositions[col];
-    let top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
-    
-    // Check if this position would cause flag to exceed any canvas boundary
-    let boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
-    
-    // Try to find a valid position that doesn't exceed boundaries
-    let attempts = 0;
-    const maxAttempts = 20; // Prevent infinite loops
-    
-    while (boundaryExceeded && attempts < maxAttempts) {
-      attempts++;
+    try {
+      const flagToAdd = inventory.find((f) => f.type === flagType);
+      if (!flagToAdd) {
+        isProcessingPlacementRef.current = false;
+        return;
+      }
       
-      // If we're at the last column and exceeding boundaries, move to the first column and next row
-      if (col >= gridConfig.maxColumns - 1) {
-        // Set the column transition flag to true to prevent double placement
-        isTransitioningColumnRef.current = true;
-        
+      // Get fresh grid config or use cached one
+      const gridConfig = currentGridConfigRef.current || getGridConfig();
+      currentGridConfigRef.current = gridConfig;
+      
+      // Get current position
+      let { col, row } = gridPositionRef.current;
+      
+      // Ensure column is within bounds
+      if (col >= gridConfig.maxColumns) {
         col = 0;
-        row++;
-        
-        // If we've reached max rows in first column, reset to first row and column
-        if (row >= gridConfig.maxItemsPerColumn) {
-          row = 0;
-        }
-      } 
-      // If bottom boundary is exceeded, start a new column
-      else if (top + (gridConfig.itemHeight / 2) + gridConfig.safetyMargin > gridConfig.canvasHeight) {
-        // Set the column transition flag to true to prevent double placement
-        isTransitioningColumnRef.current = true;
-        
-        col++;
+        row = 0;
+      }
+      
+      // Calculate exact position for this flag
+      const left = gridConfig.startX + (col * gridConfig.columnWidth);
+      const top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + (gridConfig.itemHeight / 2);
+      
+      // Verify this position is within bounds
+      if (wouldExceedBoundary(left, top, gridConfig) || 
+          left > (gridConfig.canvasWidth - gridConfig.safetyMargin - gridConfig.itemWidth/2)) {
+        // Reset to first column if out of bounds
+        col = 0;
         row = 0;
         
-        // If new column would exceed max columns, reset to first column
+        // Recalculate position
+        const newLeft = gridConfig.startX + (col * gridConfig.columnWidth);
+        const newTop = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + (gridConfig.itemHeight / 2);
+        
+        // Create the flag with adjusted position
+        const newFlag: PlacedFlag = {
+          ...flagToAdd,
+          id: nanoid(),
+          left: newLeft,
+          top: newTop,
+        };
+        
+        // Add flag to board
+        setPlacedFlags(prev => [...prev, newFlag]);
+      } else {
+        // Create the flag at calculated position
+        const newFlag: PlacedFlag = {
+          ...flagToAdd,
+          id: nanoid(),
+          left,
+          top,
+        };
+        
+        // Add flag to board
+        setPlacedFlags(prev => [...prev, newFlag]);
+      }
+      
+      // Update grid position for next flag
+      row++;
+      if (row >= gridConfig.maxItemsPerColumn) {
+        // Start a new column when this one is full
+        row = 0;
+        col++;
+        
+        // Reset to first column if we're past the last column
         if (col >= gridConfig.maxColumns) {
           col = 0;
         }
-      } 
-      // Otherwise just increment row in current column
-      else {
-        row++;
       }
       
-      // Recalculate position with new column/row using fixed column positions
-      // This ensures consistent column alignment and prevents staircase effect
-      left = gridConfig.columnPositions[col];
-      top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+      // Store updated position
+      gridPositionRef.current = { col, row };
       
-      // Final boundary check after position adjustment
-      boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
-      
-      // If we can't find a valid position after several attempts, reset to beginning
-      if (attempts >= maxAttempts - 1 && boundaryExceeded) {
-        // Last resort - place at the initial starting position
-        col = 0;
-        row = 0;
-        left = gridConfig.columnPositions[0];
-        top = gridConfig.startY + gridConfig.itemHeight / 2;
-        break;
-      }
+      // Clear selected flag and show success notification
+      setSelectedFlag(null);
+      setNotification({ message: `${flagToAdd.name} placed on canvas`, type: 'success' });
+    } finally {
+      // Always reset processing flag
+      isProcessingPlacementRef.current = false;
     }
-    
-    // Create new flag with calculated position
-    const newFlag: PlacedFlag = {
-      ...flagToAdd,
-      id: nanoid(),
-      left: left,
-      top: top,
-    };
-    
-    // Add flag to board
-    setPlacedFlags(prev => [...prev, newFlag]);
-    
-    // Update column height tracker for the current column
-    const currentColHeight = top + (gridConfig.itemHeight / 2);
-    columnHeightsRef.current[col] = Math.max(columnHeightsRef.current[col] || 0, currentColHeight);
-    
-    // Update grid position for next flag
-    if (row + 1 >= gridConfig.maxItemsPerColumn || 
-        wouldExceedCanvasBoundary(
-          left, 
-          top + gridConfig.itemHeight + gridConfig.verticalSpacing, 
-          gridConfig
-        )) {
-      // Move to next column if current column is full or next position would exceed bottom boundary
-      const nextCol = col + 1;
-      
-      // Mark that we're transitioning columns to prevent double flag placement
-      isTransitioningColumnRef.current = true;
-      
-      // Check if the next column would exceed max columns
-      if (nextCol >= gridConfig.maxColumns) {
-        // Reset to first column, first row if we've reached max columns
-        gridPositionRef.current = { col: 0, row: 0 };
-      } else {
-        // Move to next column, first row
-        gridPositionRef.current = { col: nextCol, row: 0 };
-      }
-    } else {
-      // Move down in the same column
-      gridPositionRef.current = { col, row: row + 1 };
-      // Reset the transition flag since we're staying in the same column
-      isTransitioningColumnRef.current = false;
-    }
-    
-    // Clear selected flag after placement
-    setSelectedFlag(null);
-    
-    // Show success notification
-    setNotification({ message: `${flagToAdd.name} placed on canvas`, type: 'success' });
-  }, [inventory, getGridConfig, wouldExceedCanvasBoundary]);
+  }, [inventory, getGridConfig, wouldExceedBoundary]);
 
   const addFlag = useCallback((flagType: string, left: number, top: number) => {
     const flagToAdd = inventory.find((f) => f.type === flagType);
@@ -481,8 +394,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     setPlacedFlags(prev => [...prev, newFlag]);
     
     // Update grid position after manual placement
-    updateGridPositionFromExistingFlags([...placedFlags, newFlag]);
-  }, [inventory, placedFlags, getGridConfig]);
+    initializeGridPosition();
+  }, [inventory, getGridConfig, initializeGridPosition]);
 
   const moveFlag = useCallback((id: string, left: number, top: number) => {
     // Get grid configuration for boundary checking
@@ -511,27 +424,31 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     
     setPlacedFlags(prev => {
       const updatedFlags = prev.map((flag) => (flag.id === id ? { ...flag, left, top } : flag));
-      // Update grid position after flag is moved
-      updateGridPositionFromExistingFlags(updatedFlags);
       return updatedFlags;
     });
-  }, [getGridConfig]);
+    
+    // Re-initialize grid position after moving a flag
+    initializeGridPosition();
+  }, [getGridConfig, initializeGridPosition]);
 
   const removeFlag = useCallback((id: string) => {
     setPlacedFlags(prev => {
       const updatedFlags = prev.filter((flag) => flag.id !== id);
-      // Update grid position after flag is removed
-      updateGridPositionFromExistingFlags(updatedFlags);
       return updatedFlags;
     });
-  }, []);
+    
+    // Re-initialize grid position after removing a flag
+    initializeGridPosition();
+  }, [initializeGridPosition]);
 
   const clearBoard = useCallback(() => {
     setPlacedFlags([]);
-    // Reset grid position when board is cleared
+    
+    // Reset grid position and clear cached grid config
     gridPositionRef.current = { col: 0, row: 0 };
-    columnHeightsRef.current = {};
-    isTransitioningColumnRef.current = false;
+    currentGridConfigRef.current = null;
+    isProcessingPlacementRef.current = false;
+    
     setNotification({ message: 'Board cleared', type: 'success' });
   }, []);
 
@@ -544,10 +461,16 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     }
   }, [autoPlaceFlag]);
 
-  // Safe way to update the play area ref without direct .current assignment
+  // Safe way to update the play area ref
   const updatePlayAreaRef = useCallback((node: HTMLElement | null) => {
     playAreaRef.current = node;
-  }, []);
+    
+    // Update grid config when play area changes
+    if (node) {
+      currentGridConfigRef.current = getGridConfig();
+      initializeGridPosition();
+    }
+  }, [getGridConfig, initializeGridPosition]);
 
   // Safe way to get the play area node
   const getPlayAreaNode = useCallback(() => {
