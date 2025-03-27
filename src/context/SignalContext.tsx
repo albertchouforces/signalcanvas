@@ -213,7 +213,12 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Calculate max items per column based on available height
     // This is the key change - we calculate exactly how many flags can fit
     const itemSpacing = itemHeight + verticalSpacing;
-    const maxItemsPerColumn = Math.max(1, Math.floor(usableCanvasHeight / itemSpacing));
+    let maxItemsPerColumn = Math.max(1, Math.floor(usableCanvasHeight / itemSpacing));
+    
+    // Allow one extra flag per column on mobile
+    if (isMobile) {
+      maxItemsPerColumn += 1;
+    }
     
     // Calculate start position
     const startX = isMobile 
