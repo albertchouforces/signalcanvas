@@ -289,8 +289,16 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     let left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
     let top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
     
+    // Strict check for right boundary using flag width and safety margin
+    const maxRightPosition = gridConfig.canvasWidth - gridConfig.itemWidth/2 - gridConfig.safetyMargin;
+    
     // Check if this position would cause flag to exceed any canvas boundary
     let boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
+    
+    // Additional explicit check for right boundary
+    if (left > maxRightPosition) {
+      boundaryExceeded = true;
+    }
     
     // Try to find a valid position that doesn't exceed boundaries
     let attempts = 0;
@@ -312,7 +320,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         // Recalculate the new left position
         left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
         
-        // FIXED: Check if new column position exceeds right boundary
+        // Check if new column position exceeds right boundary
         if (left + (gridConfig.itemWidth / 2) + gridConfig.safetyMargin > gridConfig.canvasWidth) {
           // Reset to first column with new row if column exceeds width
           col = 0;
@@ -348,15 +356,15 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
       top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
       
-      // FIXED: Ensure the left position never exceeds canvas width regardless of column
+      // Enhanced check for right boundary with exact values
       if (left + (gridConfig.itemWidth / 2) + gridConfig.safetyMargin > gridConfig.canvasWidth) {
         // If still outside boundaries, reset to first column
         col = 0;
         left = gridConfig.startX + gridConfig.itemWidth / 2;
       }
       
-      // Check if new position exceeds boundaries
-      boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
+      // Check if new position exceeds boundaries - add strict right boundary check
+      boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig) || left > maxRightPosition;
       
       // If we can't find a valid position after several attempts, reset to beginning
       if (attempts >= maxAttempts - 1 && boundaryExceeded) {
@@ -394,7 +402,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Move to next column if current column is full or next position would exceed bottom boundary
       gridPositionRef.current = { col: col + 1, row: 0 };
       
-      // FIXED: Check if the next column would exceed canvas boundaries
+      // Check if the next column would exceed canvas boundaries
       const nextColLeft = gridConfig.startX + (col + 1) * gridConfig.columnWidth + gridConfig.itemWidth / 2;
       if (nextColLeft + gridConfig.itemWidth/2 + gridConfig.safetyMargin > gridConfig.canvasWidth) {
         // If next column would exceed boundary, find an available position in existing columns
@@ -409,8 +417,10 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
           // Only consider columns that are within boundaries
           const colLeft = gridConfig.startX + colNum * gridConfig.columnWidth + gridConfig.itemWidth / 2;
           
+          // Added strict right boundary check
           if (height < shortestHeight && 
-              !wouldExceedCanvasBoundary(colLeft, height + gridConfig.itemHeight, gridConfig)) {
+              !wouldExceedCanvasBoundary(colLeft, height + gridConfig.itemHeight, gridConfig) &&
+              colLeft <= maxRightPosition) {
             shortestHeight = height;
             shortestCol = colNum;
             foundPlacement = true;

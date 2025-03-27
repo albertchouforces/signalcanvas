@@ -13,7 +13,6 @@ const PlayArea = () => {
   const [backgroundImageLoaded, setBackgroundImageLoaded] = useState(false);
   const [naturalAspectRatio, setNaturalAspectRatio] = useState<number>(0);
   const [isHovering, setIsHovering] = useState(false);
-  const [showBoundaryGuides, setShowBoundaryGuides] = useState(false);
   
   // Load and measure the background image to set proper dimensions
   useEffect(() => {
@@ -37,7 +36,7 @@ const PlayArea = () => {
     };
     
     // Set the image source
-    img.src = 'https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png';
+    img.src = 'images/navcommmast.png';
     
     // Clean up
     return () => {
@@ -138,21 +137,6 @@ const PlayArea = () => {
     }
   }, [containerWidth, containerHeight, placedFlags, backgroundImageLoaded, naturalAspectRatio]);
 
-  // Toggle boundary guides when user interacts with the canvas
-  useEffect(() => {
-    // Only show boundary guides on mobile
-    if (!isMobileDevice()) return;
-    
-    if (isHovering) {
-      setShowBoundaryGuides(true);
-      // Auto-hide after 2 seconds
-      const timer = setTimeout(() => {
-        setShowBoundaryGuides(false);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [isHovering]);
-
   const [, drop] = useDrop(() => ({
     accept: 'FLAG',
     drop: (item: { 
@@ -227,25 +211,6 @@ const PlayArea = () => {
     }
   };
 
-  // Calculate safety margin for boundary guide visualization
-  const getBoundaryGuideStyle = () => {
-    if (!isMobileDevice() || !showBoundaryGuides) return {};
-    
-    const safetyMargin = 16; // Match the margin used in context
-    
-    return {
-      position: 'absolute' as const,
-      top: `${safetyMargin}px`,
-      left: `${safetyMargin}px`,
-      right: `${safetyMargin}px`,
-      bottom: `${safetyMargin}px`,
-      border: '1px dashed rgba(59, 130, 246, 0.3)',
-      pointerEvents: 'none' as const,
-      zIndex: 5,
-      borderRadius: '4px',
-    };
-  };
-
   return (
     <div 
       className="bg-white rounded-lg shadow-md overflow-hidden"
@@ -268,18 +233,13 @@ const PlayArea = () => {
         <div 
           className="absolute top-0 left-0 w-full h-full pointer-events-none"
           style={{
-            backgroundImage: 'url(https://raw.githubusercontent.com/albertchouforces/signalcanvas/refs/heads/main/public/images/navcommmast.png)',
+            backgroundImage: 'url(images/navcommmast.png)',
             backgroundSize: 'contain',
             backgroundPosition: 'top center',
             backgroundRepeat: 'no-repeat',
             zIndex: 1,
           }}
         />
-        
-        {/* Boundary guides for mobile - only shown briefly when interacting */}
-        {isMobileDevice() && showBoundaryGuides && (
-          <div style={getBoundaryGuideStyle()} aria-hidden="true"></div>
-        )}
         
         {/* Scrollable content area */}
         <div
