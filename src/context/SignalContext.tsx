@@ -77,6 +77,10 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   
   // Keep track of column heights to ensure proper column transitions
   const columnHeightsRef = useRef<Record<number, number>>({});
+  
+  // Flag to track if we're currently transitioning to a new column
+  // This prevents double flag placement during column transitions
+  const isTransitioningColumnRef = useRef<boolean>(false);
 
   // Initialize inventory with signal flags and pennants
   useEffect(() => {
@@ -168,6 +172,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     } else {
       gridPositionRef.current = { col: minHeightCol, row: minHeightRow };
     }
+    
+    // Reset column transition flag
+    isTransitioningColumnRef.current = false;
   };
 
   // Get grid configuration based on current play area size
@@ -284,6 +291,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
   // Automatically place a flag on the canvas based on grid position
   // Updated to properly handle columns and prevent overflow beyond canvas boundaries
   const autoPlaceFlag = useCallback((flagType: string) => {
+    // Don't place a flag if we're in the middle of transitioning columns
+    // This prevents the bug of extra flags being added during column transitions
+    if (isTransitioningColumnRef.current) {
+      isTransitioningColumnRef.current = false;
+      return;
+    }
+    
     const flagToAdd = inventory.find((f) => f.type === flagType);
     if (!flagToAdd) return;
 
@@ -323,6 +337,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       
       // If right boundary is exceeded, move to first column of next row
       if (left + (gridConfig.itemWidth / 2) > maxRightPosition) {
+        // Set the column transition flag to true to prevent double placement
+        isTransitioningColumnRef.current = true;
+        
         col = 0;
         row++;
         
@@ -345,6 +362,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       } 
       // If bottom boundary is exceeded, start a new column
       else if (top + (gridConfig.itemHeight / 2) + gridConfig.safetyMargin > gridConfig.canvasHeight) {
+        // Set the column transition flag to true to prevent double placement
+        isTransitioningColumnRef.current = true;
+        
         col++;
         row = 0;
         
@@ -387,7 +407,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Add flag to board
     setPlacedFlags(prev => [...prev, newFlag]);
     
-    // Update column height tracker
+    // Update column height tracker for the current column
     const currentColHeight = top + (gridConfig.itemHeight / 2);
     columnHeightsRef.current[col] = Math.max(columnHeightsRef.current[col] || 0, currentColHeight);
     
@@ -400,6 +420,9 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         )) {
       // Move to next column if current column is full or next position would exceed bottom boundary
       const nextCol = col + 1;
+      
+      // Mark that we're transitioning columns to prevent double flag placement
+      isTransitioningColumnRef.current = true;
       
       // Check if the next column would exceed max columns
       if (nextCol >= gridConfig.maxColumns) {
@@ -419,6 +442,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     } else {
       // Move down in the same column
       gridPositionRef.current = { col, row: row + 1 };
+      // Reset the transition flag since we're staying in the same column
+      isTransitioningColumnRef.current = false;
     }
     
     // Clear selected flag after placement
@@ -516,6 +541,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Reset grid position when board is cleared
     gridPositionRef.current = { col: 0, row: 0 };
     columnHeightsRef.current = {};
+    isTransitioningColumnRef.current = false;
     setNotification({ message: 'Board cleared', type: 'success' });
   }, []);
 
