@@ -308,6 +308,36 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       else if (top + (gridConfig.itemHeight / 2) + gridConfig.safetyMargin > gridConfig.canvasHeight) {
         col++;
         row = 0;
+        
+        // Recalculate the new left position
+        left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+        
+        // FIXED: Check if new column position exceeds right boundary
+        if (left + (gridConfig.itemWidth / 2) + gridConfig.safetyMargin > gridConfig.canvasWidth) {
+          // Reset to first column with new row if column exceeds width
+          col = 0;
+          // Try to find a row with space
+          let foundRow = false;
+          for (let r = 0; r < gridConfig.maxItemsPerColumn; r++) {
+            top = gridConfig.startY + r * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+            if (!wouldExceedCanvasBoundary(
+                gridConfig.startX + gridConfig.itemWidth / 2, 
+                top, 
+                gridConfig)) {
+              row = r;
+              foundRow = true;
+              break;
+            }
+          }
+          
+          if (!foundRow) {
+            // If all rows are full, place at a safe default position
+            row = 0;
+            top = gridConfig.startY + gridConfig.itemHeight / 2;
+          }
+          
+          left = gridConfig.startX + gridConfig.itemWidth / 2;
+        }
       } 
       // Otherwise just increment row in current column
       else {
@@ -317,6 +347,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Recalculate position with new column/row
       left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
       top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+      
+      // FIXED: Ensure the left position never exceeds canvas width regardless of column
+      if (left + (gridConfig.itemWidth / 2) + gridConfig.safetyMargin > gridConfig.canvasWidth) {
+        // If still outside boundaries, reset to first column
+        col = 0;
+        left = gridConfig.startX + gridConfig.itemWidth / 2;
+      }
       
       // Check if new position exceeds boundaries
       boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
@@ -357,27 +394,36 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Move to next column if current column is full or next position would exceed bottom boundary
       gridPositionRef.current = { col: col + 1, row: 0 };
       
-      // Check if the next column would exceed canvas boundaries
+      // FIXED: Check if the next column would exceed canvas boundaries
       const nextColLeft = gridConfig.startX + (col + 1) * gridConfig.columnWidth + gridConfig.itemWidth / 2;
       if (nextColLeft + gridConfig.itemWidth/2 + gridConfig.safetyMargin > gridConfig.canvasWidth) {
-        // If it would exceed, wrap back to first column with an increased row
-        // Find the shortest column to place the next flag
+        // If next column would exceed boundary, find an available position in existing columns
+        let foundPlacement = false;
+        
+        // Find the column with the least height that still has room
         let shortestCol = 0;
         let shortestHeight = Infinity;
         
         Object.entries(columnHeightsRef.current).forEach(([colStr, height]) => {
           const colNum = parseInt(colStr, 10);
-          if (height < shortestHeight) {
+          // Only consider columns that are within boundaries
+          const colLeft = gridConfig.startX + colNum * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+          
+          if (height < shortestHeight && 
+              !wouldExceedCanvasBoundary(colLeft, height + gridConfig.itemHeight, gridConfig)) {
             shortestHeight = height;
             shortestCol = colNum;
+            foundPlacement = true;
           }
         });
         
-        // Reset to shortest column or first column if none found
-        gridPositionRef.current = { 
-          col: Object.keys(columnHeightsRef.current).length > 0 ? shortestCol : 0, 
-          row: 0 
-        };
+        if (foundPlacement) {
+          // Use the identified shortest column
+          gridPositionRef.current = { col: shortestCol, row: 0 };
+        } else {
+          // If no suitable column found, reset to first column at a higher row
+          gridPositionRef.current = { col: 0, row: 0 };
+        }
       }
     } else {
       // Move down in the same column
