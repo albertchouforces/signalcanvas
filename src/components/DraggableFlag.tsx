@@ -72,15 +72,15 @@ const DraggableFlag = ({ flag, isDraggingOnBoard }: DraggableFlagProps) => {
 
   // Determine flag size based on device type
   const flagHeight = isMobile ? 
-    (isTackline ? '38px' : '48px') : // Smaller on mobile
+    (isTackline ? '38px' : '42px') : // Smaller on mobile
     (isTackline ? '48px' : '64px');  // Regular size on desktop
   
   const flagMinWidth = isMobile ? 
-    (isTackline ? '48px' : '36px') : // Smaller on mobile
+    (isTackline ? '48px' : '32px') : // Smaller on mobile
     (isTackline ? '64px' : '48px');  // Regular size on desktop
   
   const flagMinHeight = isMobile ? 
-    (isTackline ? '38px' : '48px') : // Smaller on mobile
+    (isTackline ? '38px' : '42px') : // Smaller on mobile
     (isTackline ? '48px' : '64px');  // Regular size on desktop
 
   // Use ref callback pattern to avoid direct .current assignment
