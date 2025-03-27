@@ -155,7 +155,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       Math.ceil((columnHeightsRef.current[minHeightCol] - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing)) : 0;
     
     // Set the next position
-    if (minHeightRow >= gridConfig.maxItemsPerColumn) {
+    if (minHeightRow >= gridConfig.maxItemsPerColumn - 1) { // Reduced by 1 to start new column earlier
       // Find the next available column
       let nextCol = 0;
       while (columnHeightsRef.current[nextCol] && 
@@ -179,14 +179,14 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const itemHeight = isMobile ? 42 : 64;
     
     // Spacing - use reduced spacing on mobile to maximize flag count
-    const horizontalSpacing = isMobile ? 20 : 24; // Increased horizontal spacing on mobile for better column separation
-    const verticalSpacing = isMobile ? 10 : 20;   // Reduced vertical spacing on mobile to fit more flags
+    const horizontalSpacing = isMobile ? 24 : 24; // Increased horizontal spacing on mobile for better column separation
+    const verticalSpacing = isMobile ? 8 : 20;   // Further reduced vertical spacing on mobile to fit more flags
     
     // Calculate column width including spacing to prevent overflow
     const columnWidth = itemWidth + horizontalSpacing;
     
     // Safety margin to ensure flags aren't placed too close to the edge
-    const safetyMargin = isMobile ? 8 : 16;
+    const safetyMargin = isMobile ? 12 : 16;
     
     if (!playAreaNode) {
       // Default values if play area is not available
@@ -197,7 +197,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         itemHeight,
         horizontalSpacing,
         verticalSpacing,
-        maxItemsPerColumn: isMobile ? 8 : 5, // Increased max items per column on mobile
+        maxItemsPerColumn: isMobile ? 5 : 5, // Reduced max items per column on mobile to prevent overflow
         columnWidth,
         canvasWidth: 320, // Fallback canvas width
         safetyMargin
@@ -210,14 +210,18 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const areaHeight = areaRect.height;
     
     // Calculate how many flags can fit in a column with proper spacing
-    const heightBuffer = isMobile ? 40 : 100; // Reduced buffer on mobile to allow for more flags
-    const maxItemsPerColumn = Math.max(1, Math.floor((areaHeight - heightBuffer) / (itemHeight + verticalSpacing)));
+    // For mobile, reduce the max items per column to prevent overflow
+    const heightBuffer = isMobile ? 60 : 100; // Increased buffer on mobile to prevent overflow
+    const availableHeight = areaHeight - heightBuffer;
+    const maxItemsPerColumn = isMobile 
+      ? Math.min(5, Math.floor(availableHeight / (itemHeight + verticalSpacing))) // Hard cap at 5 for mobile
+      : Math.max(1, Math.floor(availableHeight / (itemHeight + verticalSpacing)));
     
     // Calculate start position
     let startX;
     if (isMobile) {
       // For mobile, use a fixed smaller indentation from the left
-      startX = Math.min(36, areaWidth * 0.1); // Limit the indentation based on screen width
+      startX = Math.min(32, areaWidth * 0.08); // Reduced indentation on mobile
     } else {
       // For desktop, center the grid as before
       startX = (areaWidth - (3 * columnWidth - horizontalSpacing)) / 2;
@@ -230,7 +234,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       itemHeight,
       horizontalSpacing,
       verticalSpacing,
-      maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 8) : maxItemsPerColumn,
+      maxItemsPerColumn: isMobile ? Math.min(5, maxItemsPerColumn) : maxItemsPerColumn, // Ensure mobile never exceeds 5
       columnWidth,
       canvasWidth: areaWidth, // Store the canvas width for boundary checks
       safetyMargin
@@ -258,6 +262,14 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     // Get current column and row position
     let { col, row } = gridPositionRef.current;
     
+    // Add additional check to enforce maximum row limit to prevent mobile overflow
+    const isMobile = isMobileDevice();
+    if (isMobile && row >= gridConfig.maxItemsPerColumn - 1) {
+      // Force a new column if we're at or approaching row limit on mobile
+      col += 1;
+      row = 0;
+    }
+    
     // Calculate initial position
     let left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
     
@@ -268,6 +280,11 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       // Find the highest row in the first column
       const firstColHeight = columnHeightsRef.current[0] || gridConfig.startY;
       row = Math.ceil((firstColHeight - gridConfig.startY) / (gridConfig.itemHeight + gridConfig.verticalSpacing));
+      
+      // If this would exceed the row limit, just start fresh at column 0, row 0
+      if (isMobile && row >= gridConfig.maxItemsPerColumn - 1) {
+        row = 0;
+      }
       
       // Recalculate position with new column
       left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
@@ -291,15 +308,15 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     columnHeightsRef.current[col] = Math.max(columnHeightsRef.current[col] || 0, currentColHeight);
     
     // Update grid position for next flag
-    if (row + 1 >= gridConfig.maxItemsPerColumn) {
-      // Move to next column if current column is full
+    if (row + 1 >= gridConfig.maxItemsPerColumn - (isMobile ? 1 : 0)) { // Start new column earlier on mobile
+      // Move to next column if current column is full or approaching full on mobile
       gridPositionRef.current = { col: col + 1, row: 0 };
       
       // Check if the next column would exceed canvas boundaries
       const nextColLeft = gridConfig.startX + (col + 1) * gridConfig.columnWidth + gridConfig.itemWidth / 2;
       if (wouldExceedCanvasBoundary(nextColLeft, gridConfig)) {
         // If it would exceed, wrap back to first column
-        gridPositionRef.current = { col: 0, row: row + 1 };
+        gridPositionRef.current = { col: 0, row: 0 }; // Reset to beginning for mobile
       }
     } else {
       // Move down in the same column
