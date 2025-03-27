@@ -187,16 +187,15 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const itemWidth = isMobile ? 42 : 64;
     const itemHeight = isMobile ? 42 : 64;
     
-    // Spacing - use reduced spacing on mobile to maximize flag count
-    const horizontalSpacing = isMobile ? 20 : 24; // Increased horizontal spacing on mobile for better column separation
+    // Spacing - tighter on mobile
+    const horizontalSpacing = isMobile ? 16 : 24; // Reduced for more compact mobile layout
     const verticalSpacing = isMobile ? 10 : 20;   // Reduced vertical spacing on mobile to fit more flags
     
-    // Calculate column width including spacing to prevent overflow
+    // Calculate actual column width including spacing
     const columnWidth = itemWidth + horizontalSpacing;
     
     // Safety margin to ensure flags aren't placed too close to the edge
-    // Increased margin on mobile to prevent any chance of flags being cut off
-    const safetyMargin = isMobile ? 20 : 16; // Increased mobile safety margin
+    const safetyMargin = isMobile ? 20 : 16;
     
     if (!playAreaNode) {
       // Default values if play area is not available
@@ -207,7 +206,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         itemHeight,
         horizontalSpacing,
         verticalSpacing,
-        maxItemsPerColumn: isMobile ? 8 : 5, // Increased max items per column on mobile
+        maxItemsPerColumn: isMobile ? 8 : 5,
         columnWidth,
         canvasWidth: 320, // Fallback canvas width
         canvasHeight: 480, // Fallback canvas height
@@ -221,34 +220,29 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
     const areaWidth = areaRect.width;
     const areaHeight = areaRect.height;
     
-    // Calculate how many flags can fit in a column with proper spacing
-    // Use a higher safety buffer for the bottom edge
-    const bottomSafetyBuffer = isMobile ? 60 : 100; // Increased buffer on mobile to prevent bottom overflow
-    const heightBuffer = isMobile ? 40 : 100; // Reduced buffer on mobile to allow for more flags
+    // Calculate max items per column with proper spacing
+    const bottomSafetyBuffer = isMobile ? 60 : 100;
+    const heightBuffer = isMobile ? 40 : 100;
     
-    // Calculate maximum items per column ensuring flags don't exceed the bottom boundary
     const maxItemsPerColumn = Math.max(1, Math.floor(
       (areaHeight - heightBuffer - bottomSafetyBuffer) / (itemHeight + verticalSpacing)
     ));
     
-    // Calculate start position
-    let startX;
-    if (isMobile) {
-      // For mobile, use a fixed smaller indentation from the left
-      // Ensure there's enough space from the left edge with the safety margin
-      startX = Math.max(itemWidth/2 + safetyMargin, Math.min(36, areaWidth * 0.1));
-    } else {
-      // For desktop, center the grid as before
-      startX = (areaWidth - (3 * columnWidth - horizontalSpacing)) / 2;
-    }
+    // Calculate start position - ensure fixed and consistent starting point
+    const startX = isMobile 
+      ? Math.max(itemWidth/2 + safetyMargin, 30) // Fixed starting point for mobile
+      : (areaWidth - (3 * columnWidth - horizontalSpacing)) / 2;
     
     // Ensure startY leaves enough vertical space
     const startY = isMobile ? Math.max(itemHeight/2 + safetyMargin, 45) : 55;
 
-    // Calculate maximum number of columns that can fit within the canvas width
-    // This is critical for preventing overflow in mobile mode
-    const usableWidth = areaWidth - (2 * safetyMargin); // Account for safety margins on both sides
-    const maxColumns = Math.max(1, Math.floor(usableWidth / columnWidth));
+    // Calculate maximum number of columns that can fit
+    // This is critical for consistent column spacing
+    const usableWidth = areaWidth - (2 * safetyMargin);
+    
+    // Calculate max columns with proper spacing AND ensure we don't overflow
+    // Use ceil to calculate max possible columns including full width of each
+    const maxColumns = Math.floor((usableWidth - itemWidth) / columnWidth) + 1;
     
     return {
       startX,
@@ -259,10 +253,10 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       verticalSpacing,
       maxItemsPerColumn: isMobile ? Math.max(maxItemsPerColumn, 8) : maxItemsPerColumn,
       columnWidth,
-      canvasWidth: areaWidth, // Store the canvas width for boundary checks
-      canvasHeight: areaHeight, // Store the canvas height for boundary checks
+      canvasWidth: areaWidth,
+      canvasHeight: areaHeight,
       safetyMargin,
-      maxColumns // Store the maximum number of columns that can fit
+      maxColumns: Math.max(1, maxColumns) // Ensure at least 1 column
     };
   }, []);
 
@@ -313,12 +307,13 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       row = 0;
     }
     
-    // Calculate initial position for the flag
-    let left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+    // Calculate the exact position for the flag with fixed column widths
+    // This ensures consistent column spacing regardless of how many columns we have
+    const left = gridConfig.startX + (col * gridConfig.columnWidth);
     let top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
     
-    // Calculate strict right boundary for flag placement
-    const maxRightPosition = gridConfig.canvasWidth - gridConfig.itemWidth/2 - gridConfig.safetyMargin;
+    // Calculate the maximum right position (right boundary)
+    const maxRightPosition = gridConfig.canvasWidth - gridConfig.safetyMargin - gridConfig.itemWidth/2;
     
     // Check if this position would cause flag to exceed any canvas boundary
     let boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig);
@@ -336,7 +331,7 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
       attempts++;
       
       // If right boundary is exceeded, move to first column of next row
-      if (left + (gridConfig.itemWidth / 2) > maxRightPosition) {
+      if (left > maxRightPosition) {
         // Set the column transition flag to true to prevent double placement
         isTransitioningColumnRef.current = true;
         
@@ -348,16 +343,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
           // Reset to first row
           row = 0;
           
-          // Find the first column that can fit the flag without exceeding boundaries
-          for (let testCol = 0; testCol < gridConfig.maxColumns; testCol++) {
-            const testLeft = gridConfig.startX + testCol * gridConfig.columnWidth + gridConfig.itemWidth / 2;
-            const testTop = gridConfig.startY + gridConfig.itemHeight / 2;
-            
-            if (!wouldExceedCanvasBoundary(testLeft, testTop, gridConfig) && testLeft <= maxRightPosition) {
-              col = testCol;
-              break;
-            }
-          }
+          // Reset to first column when we exceed right boundary
+          col = 0;
         }
       } 
       // If bottom boundary is exceeded, start a new column
@@ -378,44 +365,66 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         row++;
       }
       
-      // Recalculate position with new column/row
-      left = gridConfig.startX + col * gridConfig.columnWidth + gridConfig.itemWidth / 2;
-      top = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+      // Recalculate position with new column/row using fixed column width
+      // This ensures consistent spacing between columns
+      const newLeft = gridConfig.startX + (col * gridConfig.columnWidth);
+      const newTop = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+      
+      // Check if the calculated position would exceed the right boundary
+      if (newLeft > maxRightPosition) {
+        // If it would, try the first column instead
+        col = 0;
+        const resetLeft = gridConfig.startX + (col * gridConfig.columnWidth);
+        
+        // If we're already at the first column and still exceeding, we might need to adjust margins
+        if (resetLeft > maxRightPosition) {
+          // As a last resort, place at the leftmost position with safety margin
+          isTransitioningColumnRef.current = true;
+          col = 0;
+          row = 0;
+          break;
+        }
+      }
+      
+      // Update position for next check
+      top = newTop;
       
       // Final boundary check after position adjustment
-      boundaryExceeded = wouldExceedCanvasBoundary(left, top, gridConfig) || left > maxRightPosition;
+      boundaryExceeded = wouldExceedCanvasBoundary(newLeft, newTop, gridConfig) || newLeft > maxRightPosition;
       
       // If we can't find a valid position after several attempts, reset to beginning
       if (attempts >= maxAttempts - 1 && boundaryExceeded) {
         // Last resort - place at the initial starting position
-        left = gridConfig.startX + gridConfig.itemWidth/2 + gridConfig.safetyMargin;
-        top = gridConfig.startY + gridConfig.itemHeight/2 + gridConfig.safetyMargin;
         col = 0;
         row = 0;
         break;
       }
     }
     
+    // Calculate final position for the flag using fixed column width formula
+    const finalLeft = gridConfig.startX + (col * gridConfig.columnWidth);
+    const finalTop = gridConfig.startY + row * (gridConfig.itemHeight + gridConfig.verticalSpacing) + gridConfig.itemHeight / 2;
+    
     // Create new flag with calculated position
     const newFlag: PlacedFlag = {
       ...flagToAdd,
       id: nanoid(),
-      left,
-      top,
+      left: finalLeft,
+      top: finalTop,
     };
     
     // Add flag to board
     setPlacedFlags(prev => [...prev, newFlag]);
     
     // Update column height tracker for the current column
-    const currentColHeight = top + (gridConfig.itemHeight / 2);
+    const currentColHeight = finalTop + (gridConfig.itemHeight / 2);
     columnHeightsRef.current[col] = Math.max(columnHeightsRef.current[col] || 0, currentColHeight);
     
     // Update grid position for next flag
     if (row + 1 >= gridConfig.maxItemsPerColumn || 
         wouldExceedCanvasBoundary(
-          left, 
-          top + gridConfig.itemHeight + gridConfig.verticalSpacing, 
+          finalLeft, 
+          finalTop + gridConfig.itemHeight + gridConfig.verticalSpacing, 
           gridConfig
         )) {
       // Move to next column if current column is full or next position would exceed bottom boundary
@@ -432,8 +441,8 @@ export const SignalProvider = ({ children }: SignalProviderProps) => {
         // Move to next column, first row
         gridPositionRef.current = { col: nextCol, row: 0 };
         
-        // Verify the next column won't exceed canvas boundaries
-        const nextColLeft = gridConfig.startX + nextCol * gridConfig.columnWidth + gridConfig.itemWidth / 2;
+        // Calculate next column position and verify it won't exceed canvas boundaries
+        const nextColLeft = gridConfig.startX + (nextCol * gridConfig.columnWidth);
         if (nextColLeft > maxRightPosition) {
           // If next column would exceed right boundary, reset to first column
           gridPositionRef.current = { col: 0, row: 0 };
