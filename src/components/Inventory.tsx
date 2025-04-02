@@ -306,9 +306,9 @@ const Inventory = () => {
       <div className={`transition-all duration-300 ease-in-out 
                      ${isCollapsed 
                        ? 'max-h-0 opacity-0 overflow-hidden' 
-                       : 'p-4 grid grid-cols-2 gap-4 overflow-y-auto opacity-100 ' + 
-                         /* Half the height on mobile */ 
-                         'max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-280px)] sm:max-h-[160px]'
+                       : 'p-4 grid grid-cols-2 gap-4 overflow-y-auto opacity-100 inventory-grid-mobile ' + 
+                         /* Limited height on mobile to show ~4 flags */ 
+                         'max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-280px)]'
                      }`}>
         {filteredInventory.length > 0 ? (
           filteredInventory.map((flag) => (
@@ -317,6 +317,13 @@ const Inventory = () => {
         ) : (
           <div className="col-span-2 text-center py-8 text-gray-500">
             {searchTerm ? 'No matches found' : 'No items in this category'}
+          </div>
+        )}
+        
+        {/* Scroll indicator for mobile - only show when there are enough items */}
+        {filteredInventory.length > 4 && !isCollapsed && (
+          <div className="sm:hidden col-span-2 text-center mt-1 text-xs text-gray-400">
+            Scroll for more flags
           </div>
         )}
       </div>

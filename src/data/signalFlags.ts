@@ -5,7 +5,7 @@ export const signalFlags = [
     name: 'Alfa',
     category: 'flag' as const,
     image: 'images/signalflags/Alfa.svg',
-    keywords: []
+    keywords: ['alpha']
   },
   {
     id: 'bravo',

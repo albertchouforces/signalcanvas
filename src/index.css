@@ -58,7 +58,7 @@ html, body {
 /* Custom inventory height for mobile */
 @media (max-width: 768px) {
   .inventory-grid-mobile {
-    max-height: 160px !important;
+    max-height: 260px !important;
     transition: max-height 0.3s ease-in-out;
   }
   
@@ -71,5 +71,18 @@ html, body {
   
   .selected-flag-pulse {
     animation: pulse-border 2s infinite;
+  }
+  
+  /* Add a fade-out effect at the bottom of the inventory to indicate more content */
+  .inventory-grid-mobile::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 20px;
+    background: linear-gradient(to top, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    opacity: 0.8;
   }
 }
