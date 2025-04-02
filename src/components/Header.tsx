@@ -34,7 +34,7 @@ const Header = () => {
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center">
           <h1 className="text-2xl font-montserrat font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-blue-500 drop-shadow-sm">
-            Signal Flag Canvas
+            Signal Flags Canvas
           </h1>
           <div className="relative ml-2">
             <button
